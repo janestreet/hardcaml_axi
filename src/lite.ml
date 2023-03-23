@@ -29,11 +29,7 @@ module Make (X : Master_slave_bus_config.S) = struct
         ~reg_spec
         ~axi_master
         ~create_fn:(fun master ->
-          Internal_bus.Demultiplexer.create
-            scope
-            ~address_offset
-            ~master
-            ~slaves:int_slaves)
+          Internal_bus.Demultiplexer.create scope ~address_offset ~master ~slaves:int_slaves)
     ;;
   end
 

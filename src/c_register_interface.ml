@@ -64,24 +64,27 @@ module Make (Regs : Interface.S_with_ast) = struct
     =
     Out_channel.fprintf f "%sstruct %s {\n" indent typ_name;
     let offset = ref 0 in
-    Regs.iter2 Regs.t (get_docs Regs.ast) ~f:(fun (register_name, width) docs ->
-      Out_channel.fprintf
-        f
-        "%s    /* %s (bits = %i, address offset = %i)"
-        indent
-        register_name
-        width
-        !offset;
-      offset := !offset + 4;
-      (match docs with
-       | None -> Out_channel.fprintf f " */\n"
-       | Some docs ->
-         Out_channel.fprintf
-           f
-           "\n\n%s\n%s    */\n"
-           (format_doc_string ~indent:(indent ^ "       ") docs)
-           indent);
-      Out_channel.fprintf f "%s    uint32_t %s;\n" indent register_name);
+    Regs.iter2
+      Regs.port_names_and_widths
+      (get_docs Regs.ast)
+      ~f:(fun (register_name, width) docs ->
+        Out_channel.fprintf
+          f
+          "%s    /* %s (bits = %i, address offset = %i)"
+          indent
+          register_name
+          width
+          !offset;
+        offset := !offset + 4;
+        (match docs with
+         | None -> Out_channel.fprintf f " */\n"
+         | Some docs ->
+           Out_channel.fprintf
+             f
+             "\n\n%s\n%s    */\n"
+             (format_doc_string ~indent:(indent ^ "       ") docs)
+             indent);
+        Out_channel.fprintf f "%s    uint32_t %s;\n" indent register_name);
     Out_channel.fprintf f "%s}" indent;
     if not don't_add_trailing_semicolon then Out_channel.fprintf f ";\n"
   ;;
@@ -100,7 +103,7 @@ module Make (Regs : Interface.S_with_ast) = struct
       | Some name -> name
     in
     Out_channel.fprintf f "%sstatic const struct %s %s = {\n" indent typ_name name;
-    Regs.iter Regs.t ~f:(fun (register_name, _width) ->
+    Regs.iter Regs.port_names ~f:(fun register_name ->
       let register_name =
         if c90
         then Printf.sprintf "/* %-40s */" register_name

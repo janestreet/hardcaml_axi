@@ -92,13 +92,13 @@ module type S = sig
       :  ?pipelined_read_depth:pipelined_read_depth
       -> Scope.t
       -> write_modes:Register_mode.t Write.t
-      -> Signal.t Interface.Create_fn(I)(O).t
+      -> Interface.Create_fn(I)(O).t
 
     val hierarchical
       :  ?pipelined_read_depth:pipelined_read_depth
       -> Scope.t
       -> write_modes:Register_mode.t Write.t
-      -> Signal.t Interface.Create_fn(I)(O).t
+      -> Interface.Create_fn(I)(O).t
   end
 end
 

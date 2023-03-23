@@ -14,7 +14,11 @@ struct
 
     let word_size = 32
     let num_words = (X.sum_of_port_widths + word_size - 1) / word_size
-    let t = Array.init num_words ~f:(fun i -> X.name ^ "_" ^ Int.to_string i, 32)
+
+    let port_names_and_widths =
+      Array.init num_words ~f:(fun i -> X.name ^ "_" ^ Int.to_string i, 32)
+    ;;
+
     let map = Array.map
     let map2 = Array.map2_exn
     let iter = Array.iter
@@ -400,7 +404,7 @@ struct
       module T = struct
         include Read
 
-        let t = map t ~f:(fun (n, _) -> "ren$" ^ n, 1)
+        let port_names_and_widths = map port_names ~f:(fun n -> "ren$" ^ n, 1)
       end
 
       include T
@@ -427,8 +431,13 @@ struct
       [@@deriving sexp_of, hardcaml]
     end
 
-    let write_addresses = Write.(scan t ~init:0 ~f:(fun addr _ -> addr + 1, addr * 4))
-    let read_addresses = Read.(scan t ~init:0 ~f:(fun addr _ -> addr + 1, addr * 4))
+    let write_addresses =
+      Write.(scan port_names ~init:0 ~f:(fun addr _ -> addr + 1, addr * 4))
+    ;;
+
+    let read_addresses =
+      Read.(scan port_names ~init:0 ~f:(fun addr _ -> addr + 1, addr * 4))
+    ;;
 
     let create ?pipelined_read_depth _scope ~write_modes (i : _ I.t) =
       let reg_spec = Reg_spec.create ~clock:i.clock ~clear:i.clear () in
@@ -454,12 +463,11 @@ struct
       in
       let write_values =
         let t =
-          Write.to_list Write.t |> List.map2_exn write_values ~f:(fun s (n, _) -> n, s)
+          Write.to_list Write.port_names
+          |> List.map2_exn write_values ~f:(fun s n -> n, s)
         in
-        Write.map Write.t ~f:(fun (n, b) ->
-          let { With_valid.valid; value } =
-            List.Assoc.find_exn t n ~equal:String.equal
-          in
+        Write.map Write.port_names_and_widths ~f:(fun (n, b) ->
+          let { With_valid.valid; value } = List.Assoc.find_exn t n ~equal:String.equal in
           { With_valid.valid; value = Signal.select value (b - 1) 0 })
       in
       let read_enable =

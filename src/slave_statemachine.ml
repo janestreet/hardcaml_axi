@@ -82,11 +82,11 @@ struct
     let state = Always.State_machine.create (module State) reg_spec ~enable:vdd in
     ignore @@ (state.current -- "STATE");
     let int_master =
-      Internal_bus.Master_to_slave.(map t) ~f:(fun (_, width) ->
+      Internal_bus.Master_to_slave.(map port_widths) ~f:(fun width ->
         Always.Variable.reg reg_spec ~enable:vdd ~width)
     in
     let axi_slave =
-      Slave_to_master.(map t) ~f:(fun (_, width) ->
+      Slave_to_master.(map port_widths) ~f:(fun width ->
         Always.Variable.reg reg_spec ~enable:vdd ~width)
     in
     Always.(
