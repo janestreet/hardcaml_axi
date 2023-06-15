@@ -34,6 +34,10 @@ module type S = sig
       with module Master_to_slave := Master_to_slave
        and module Slave_to_master := Slave_to_master
   end
+
+  (** A simple state machine to register the datapath of an Ibus. *)
+  module Register :
+    module type of Internal_bus_register.Make (Master_to_slave) (Slave_to_master)
 end
 
 module type Internal_bus = sig
