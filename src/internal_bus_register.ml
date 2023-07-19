@@ -42,7 +42,11 @@ struct
        the case we see a valid write or read but it is de-asserted before the handshake is
        finished. *)
     let o = O.Of_always.reg reg_spec in
-    let slave_up_write_ready = Variable.wire ~default:gnd in
+    let slave_up_write_ready =
+      if supports_wready
+      then Variable.reg reg_spec ~width:1
+      else Variable.wire ~default:gnd
+    in
     compile
       [ Slave_to_master.(Of_always.assign o.slave_up (Of_signal.of_int 0))
       ; (* The _first signals don't wait for ready before de-asserting. *)
@@ -77,7 +81,8 @@ struct
                 @@ []
               ] )
           ; ( Write
-            , [ when_
+            , [ (if supports_wready then slave_up_write_ready <--. 0 else proc [])
+              ; when_
                   i.slave_dn.write_ready
                   [ sm.set_next Idle
                   ; Master_to_slave.(Of_always.assign o.master_dn (Of_signal.of_int 0))
