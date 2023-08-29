@@ -18,7 +18,7 @@ module Master_to_slave (C : Master_slave_bus_config.S) = struct
     ; arprot : 'a [@bits 3]
     ; rready : 'a
     }
-  [@@deriving sexp_of, fields, hardcaml]
+  [@@deriving sexp_of, hardcaml]
 
   include C
 end

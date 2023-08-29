@@ -14,7 +14,7 @@ type t =
   ; clear_to : int
   ; mode : Mode.t
   }
-[@@deriving sexp_of, fields]
+[@@deriving sexp_of, fields ~getters]
 
 let create ?(internal_clear = false) ?(clear_to = 0) mode =
   { internal_clear; clear_to; mode }
