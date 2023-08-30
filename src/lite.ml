@@ -14,22 +14,22 @@ module Make (X : Master_slave_bus_config.S) = struct
     type 'a t =
       ( Signal.t Slave_to_master.t
       , Signal.t Internal_bus.Master_to_slave.t list )
-        Slave_with_data.t
+      Slave_with_data.t
     [@@deriving sexp_of]
 
     let create
-          scope
-          ~reg_spec
-          ~address_offset
-          ~(axi_master : Signal.t Master_to_slave.t)
-          ~(int_slaves : Signal.t Internal_bus.Slave_to_master.t list)
+      scope
+      ~reg_spec
+      ~address_offset
+      ~(axi_master : Signal.t Master_to_slave.t)
+      ~(int_slaves : Signal.t Internal_bus.Slave_to_master.t list)
       =
       Slave_statemachine.with_slave_statemachine
         scope
         ~reg_spec
         ~axi_master
         ~create_fn:(fun master ->
-          Internal_bus.Demultiplexer.create scope ~address_offset ~master ~slaves:int_slaves)
+        Internal_bus.Demultiplexer.create scope ~address_offset ~master ~slaves:int_slaves)
     ;;
   end
 
@@ -43,7 +43,7 @@ module Make (X : Master_slave_bus_config.S) = struct
           ~reg_spec
           ~axi_master
           ~create_fn:(fun master ->
-            Internal_bus.Ram_with_byte_enables.create ~reg_spec ~master ~size)
+          Internal_bus.Ram_with_byte_enables.create ~reg_spec ~master ~size)
       in
       x.slave
     ;;
@@ -60,12 +60,12 @@ module Make (X : Master_slave_bus_config.S) = struct
         ~reg_spec
         ~axi_master
         ~create_fn:(fun master ->
-          Internal_bus.Register_bank.create
-            reg_spec
-            ~master
-            ~write_modes
-            ~read_values
-            ~clear_write_values:Signal.gnd)
+        Internal_bus.Register_bank.create
+          reg_spec
+          ~master
+          ~write_modes
+          ~read_values
+          ~clear_write_values:Signal.gnd)
     ;;
 
     module With_interface (Read : Interface.S) (Write : Interface.S) = struct
@@ -84,18 +84,18 @@ module Make (X : Master_slave_bus_config.S) = struct
           ~reg_spec
           ~axi_master
           ~create_fn:(fun master ->
-            let { Internal.O.slave; write_values; read_enable = _ } =
-              Internal.create
-                scope
-                ~write_modes
-                { Internal.I.clock = Reg_spec.clock reg_spec
-                ; clear = Reg_spec.clear reg_spec
-                ; master
-                ; read_values
-                ; clear_write_values = Signal.gnd
-                }
-            in
-            { Slave_with_data.slave; data = write_values })
+          let { Internal.O.slave; write_values; read_enable = _ } =
+            Internal.create
+              scope
+              ~write_modes
+              { Internal.I.clock = Reg_spec.clock reg_spec
+              ; clear = Reg_spec.clear reg_spec
+              ; master
+              ; read_values
+              ; clear_write_values = Signal.gnd
+              }
+          in
+          { Slave_with_data.slave; data = write_values })
       ;;
     end
   end

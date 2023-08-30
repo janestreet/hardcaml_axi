@@ -4,8 +4,8 @@ open Hardcaml
 module type S = Ram_with_byte_enables_intf.S
 
 module Make
-    (Master_to_slave : Internal_bus_ports.Master_to_slave)
-    (Slave_to_master : Internal_bus_ports.Slave_to_master) =
+  (Master_to_slave : Internal_bus_ports.Master_to_slave)
+  (Slave_to_master : Internal_bus_ports.Slave_to_master) =
 struct
   open Signal
 

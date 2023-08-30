@@ -4,8 +4,8 @@ open Hardcaml
 module type S = Demultiplexer_intf.S
 
 module Make
-    (Master_to_slave : Internal_bus_ports.Master_to_slave)
-    (Slave_to_master : Internal_bus_ports.Slave_to_master) =
+  (Master_to_slave : Internal_bus_ports.Master_to_slave)
+  (Slave_to_master : Internal_bus_ports.Slave_to_master) =
 struct
   open Signal
 
@@ -25,11 +25,11 @@ struct
     ;;
 
     let create
-          ?reg_spec
-          _scope
-          ~address_offset
-          ~(master : Signal.t Master_to_slave.t)
-          ~(slaves : Signal.t Slave_to_master.t list)
+      ?reg_spec
+      _scope
+      ~address_offset
+      ~(master : Signal.t Master_to_slave.t)
+      ~(slaves : Signal.t Slave_to_master.t list)
       =
       (* get address selection bits *)
       let address = master.address in

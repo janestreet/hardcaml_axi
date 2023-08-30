@@ -23,11 +23,11 @@ module Make (X : Config) = struct
   end
 
   let add_properties
-        ?(clear = Signal.gnd)
-        ?(prefix = "")
-        ~(source : _ Source.t)
-        ~(dest : _ Dest.t)
-        scope
+    ?(clear = Signal.gnd)
+    ?(prefix = "")
+    ~(source : _ Source.t)
+    ~(dest : _ Dest.t)
+    scope
     =
     if Scope.trace_properties scope
     then (
@@ -58,16 +58,16 @@ module Make (X : Config) = struct
          require 2^number_of_bits states *)
       List.concat [ [ ap_tlast ]; aps_tdata; aps_tkeep; aps_tstrb ]
       |> List.iter ~f:(fun ap ->
-        let prop =
-          g (ap_tvalid &: ap ==>: (r ap_tready ap |: u ap ap_clear))
-          &: g (ap_tvalid &: ~:ap ==>: (r ap_tready ~:ap |: u ~:ap ap_clear))
-        in
-        let signal_name signal = List.hd_exn (Signal.names signal) in
-        let ap_name = Property.LTL.to_string ~name:signal_name ap in
-        Scope.add_ltl_property
-          scope
-          [%string "tvalid waits for tready without %{ap_name} changing"]
-          prop))
+           let prop =
+             g (ap_tvalid &: ap ==>: (r ap_tready ap |: u ap ap_clear))
+             &: g (ap_tvalid &: ~:ap ==>: (r ap_tready ~:ap |: u ~:ap ap_clear))
+           in
+           let signal_name signal = List.hd_exn (Signal.names signal) in
+           let ap_name = Property.LTL.to_string ~name:signal_name ap in
+           Scope.add_ltl_property
+             scope
+             [%string "tvalid waits for tready without %{ap_name} changing"]
+             prop))
   ;;
 
   module Datapath_register = struct
@@ -207,10 +207,10 @@ module Make (X : Config) = struct
     ;;
 
     let pipeline_expert
-          ~(pipeline_stages : Pipeline_stage_descr.t list)
-          ~scope
-          ~clock
-          ~(io : _ IO.t)
+      ~(pipeline_stages : Pipeline_stage_descr.t list)
+      ~scope
+      ~clock
+      ~(io : _ IO.t)
       =
       let pipeline =
         build_datapath_reg_pipeline ~scope ~pipeline_stages ~clock ~source:io.source
@@ -219,7 +219,7 @@ module Make (X : Config) = struct
         (List.fold_right pipeline ~init:io.dest ~f:(fun pipeline_stage axi_dest ->
            Signal.( <== ) pipeline_stage.dst_dn.tready axi_dest.Dest.tready;
            pipeline_stage.dst_up)
-         : Signal.t Dest.t);
+          : Signal.t Dest.t);
       match pipeline_stages with
       | [] -> io
       | _ ->

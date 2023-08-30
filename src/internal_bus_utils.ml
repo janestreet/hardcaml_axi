@@ -2,8 +2,8 @@ open Base
 open Hardcaml
 
 module Make
-    (Master_to_slave : Internal_bus_ports.Master_to_slave)
-    (Slave_to_master : Internal_bus_ports.Slave_to_master) =
+  (Master_to_slave : Internal_bus_ports.Master_to_slave)
+  (Slave_to_master : Internal_bus_ports.Slave_to_master) =
 struct
   open Signal
 
@@ -15,11 +15,11 @@ struct
   ;;
 
   let create_slave
-        ~read_latency
-        ~write_latency
-        ~reg_spec
-        ~(master : _ Master_to_slave.t)
-        ~read_data
+    ~read_latency
+    ~write_latency
+    ~reg_spec
+    ~(master : _ Master_to_slave.t)
+    ~read_data
     =
     { Slave_to_master.write_ready =
         pipeline reg_spec ~enable:vdd ~n:write_latency master.write_first

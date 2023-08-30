@@ -13,8 +13,8 @@ module type S = sig
     (** @inline *)
     include
       Demultiplexer.S
-      with module Master_to_slave := Master_to_slave
-       and module Slave_to_master := Slave_to_master
+        with module Master_to_slave := Master_to_slave
+         and module Slave_to_master := Slave_to_master
   end
 
   (** RAM with per byte enable and configurable size. *)
@@ -22,8 +22,8 @@ module type S = sig
     (** @inline *)
     include
       Ram_with_byte_enables.S
-      with module Master_to_slave := Master_to_slave
-       and module Slave_to_master := Slave_to_master
+        with module Master_to_slave := Master_to_slave
+         and module Slave_to_master := Slave_to_master
   end
 
   (** Bank of read/write registers connected to a Master interface. *)
@@ -31,13 +31,13 @@ module type S = sig
     (** @inline *)
     include
       Register_bank.S
-      with module Master_to_slave := Master_to_slave
-       and module Slave_to_master := Slave_to_master
+        with module Master_to_slave := Master_to_slave
+         and module Slave_to_master := Slave_to_master
   end
 
   (** A simple state machine to register the datapath of an Ibus. *)
   module Register :
-    module type of Internal_bus_register.Make (Master_to_slave) (Slave_to_master)
+      module type of Internal_bus_register.Make (Master_to_slave) (Slave_to_master)
 end
 
 module type Internal_bus = sig

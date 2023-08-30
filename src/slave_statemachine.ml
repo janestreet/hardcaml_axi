@@ -2,9 +2,9 @@ open Base
 open Hardcaml
 
 module Make
-    (Master_to_slave : Lite_ports.Master_to_slave)
-    (Slave_to_master : Lite_ports.Slave_to_master)
-    (Internal_bus : Internal_bus.S) =
+  (Master_to_slave : Lite_ports.Master_to_slave)
+  (Slave_to_master : Lite_ports.Slave_to_master)
+  (Internal_bus : Internal_bus.S) =
 struct
   open Signal
 
@@ -138,7 +138,7 @@ struct
                        ]
                        []
                 ] )
-              ; (* complete the address phase for the write transaction *)
+            ; (* complete the address phase for the write transaction *)
               ( Wait_for_axi_write_address
               , [ int_master.address <-- i.axi_master.awaddr
                 ; when_
@@ -149,7 +149,7 @@ struct
                     ; state.set_next Wait_for_internal_write_done
                     ]
                 ] )
-              ; (* complete the data phase for the write transaction *)
+            ; (* complete the data phase for the write transaction *)
               ( Wait_for_axi_write_data
               , [ int_master.write_data <-- i.axi_master.wdata
                 ; int_master.write_byte_en <-- i.axi_master.wstrb
@@ -161,7 +161,7 @@ struct
                     ; state.set_next Wait_for_internal_write_done
                     ]
                 ] )
-              ; (* perform the internal write *)
+            ; (* perform the internal write *)
               ( Wait_for_internal_write_done
               , [ when_
                     i.int_slave.write_ready
@@ -172,7 +172,7 @@ struct
                       state.set_next Wait_for_axi_write_done
                     ]
                 ] )
-              ; (* wait for write confirmation response from the axi_master. *)
+            ; (* wait for write confirmation response from the axi_master. *)
               ( Wait_for_axi_write_done
               , [ when_
                     i.axi_master.bready
@@ -182,7 +182,7 @@ struct
                     ; state.set_next Wait_transaction_start
                     ]
                 ] )
-              ; (* perform the internal read *)
+            ; (* perform the internal read *)
               ( Wait_for_internal_read_done
               , [ when_
                     i.int_slave.read_ready
@@ -194,7 +194,7 @@ struct
                     ; state.set_next Wait_for_axi_read_done
                     ]
                 ] )
-              ; (* wait for read response from the axi_master *)
+            ; (* wait for read response from the axi_master *)
               ( Wait_for_axi_read_done
               , [ when_
                     i.axi_master.rready
@@ -217,11 +217,11 @@ struct
   ;;
 
   let with_slave_statemachine
-        ?(hierarchical_instance = false)
-        scope
-        ~reg_spec
-        ~axi_master
-        ~create_fn
+    ?(hierarchical_instance = false)
+    scope
+    ~reg_spec
+    ~axi_master
+    ~create_fn
     =
     let int_slave = Internal_bus.Slave_to_master.Of_signal.wires () in
     let { O.axi_slave; int_master } =

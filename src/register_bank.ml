@@ -4,10 +4,10 @@ open Hardcaml
 module type S = Register_bank_intf.S
 
 module Packed_array (X : sig
-    include Interface.S
+  include Interface.S
 
-    val name : string
-  end) =
+  val name : string
+end) =
 struct
   module T = struct
     type 'a t = 'a array [@@deriving sexp_of]
@@ -38,10 +38,10 @@ struct
   ;;
 
   let to_packed_array_latch_on_read
-        ~read_latency
-        spec
-        (x : Signal.t X.t)
-        (read_enables : Signal.t t)
+    ~read_latency
+    spec
+    (x : Signal.t X.t)
+    (read_enables : Signal.t t)
     =
     if read_latency < 0
     then raise_s [%message "read_latency must be non-negative!" (read_latency : int)]
@@ -69,9 +69,9 @@ struct
   let bit_positions = X.map2 (X.offsets ()) X.port_widths ~f:(fun o w -> o, w)
 
   let of_packed_array_with_valid
-        (type a)
-        (module Comb : Comb.S with type t = a)
-        (t : a With_valid.t t)
+    (type a)
+    (module Comb : Comb.S with type t = a)
+    (t : a With_valid.t t)
     : a With_valid.t X.t
     =
     let x = of_packed_array (module Comb) (Array.map t ~f:(fun v -> v.value)) in
@@ -123,11 +123,11 @@ struct
     let loop_set (offset, width) (out_offset, out_word) packed =
       let f word bit_offset bits_left (set_offset, set_word) packed =
         packed.(word)
-        <- set_in_int
-             ~orig:packed.(word)
-             ~offset:bit_offset
-             ~width:bits_left
-             ~v:I.(set_word lsr set_offset);
+          <- set_in_int
+               ~orig:packed.(word)
+               ~offset:bit_offset
+               ~width:bits_left
+               ~v:I.(set_word lsr set_offset);
         set_word
       in
       ignore (loop f (offset, width) (out_offset, out_word) packed : I.t)
@@ -139,7 +139,6 @@ struct
       in
       loop f
     ;;
-
 
     let extract (offset, width) packed =
       if width > I.num_bits
@@ -186,27 +185,27 @@ struct
         if start_word = end_word
         then
           packed.(start_word)
-          <- set_in_int
-               ~orig:packed.(start_word)
-               ~offset:start_bit_offset
-               ~width:cur_width
-               ~v:byte
+            <- set_in_int
+                 ~orig:packed.(start_word)
+                 ~offset:start_bit_offset
+                 ~width:cur_width
+                 ~v:byte
         else (
           assert (end_word = start_word + 1);
           let start_byte_bits = 32 - start_bit_offset in
           packed.(start_word)
-          <- set_in_int
-               ~orig:packed.(start_word)
-               ~offset:start_bit_offset
-               ~width:start_byte_bits
-               ~v:byte;
+            <- set_in_int
+                 ~orig:packed.(start_word)
+                 ~offset:start_bit_offset
+                 ~width:start_byte_bits
+                 ~v:byte;
           let end_byte_bits = cur_width - start_byte_bits in
           packed.(end_word)
-          <- set_in_int
-               ~orig:packed.(end_word)
-               ~offset:0
-               ~width:end_byte_bits
-               ~v:(byte lsr start_byte_bits));
+            <- set_in_int
+                 ~orig:packed.(end_word)
+                 ~offset:0
+                 ~width:end_byte_bits
+                 ~v:(byte lsr start_byte_bits));
         loop (offset + 8, width - 8) (byte_pos + 1, bytes) packed)
     in
     X.map bit_positions ~f:(fun (offset, width) packed bytes ->
@@ -279,8 +278,8 @@ struct
 end
 
 module Make
-    (Master_to_slave : Internal_bus_ports.Master_to_slave)
-    (Slave_to_master : Internal_bus_ports.Slave_to_master) =
+  (Master_to_slave : Internal_bus_ports.Master_to_slave)
+  (Slave_to_master : Internal_bus_ports.Slave_to_master) =
 struct
   open Signal
   module Master_to_slave = Master_to_slave
@@ -314,12 +313,12 @@ struct
       }
 
     let create
-          ?(pipelined_read_depth = { external_cycles = 0; internal_mux_cycles = 0 })
-          reg_spec
-          ~clear_write_values
-          ~(master : _ Master_to_slave.t)
-          ~write_modes
-          ~read_values
+      ?(pipelined_read_depth = { external_cycles = 0; internal_mux_cycles = 0 })
+      reg_spec
+      ~clear_write_values
+      ~(master : _ Master_to_slave.t)
+      ~write_modes
+      ~read_values
       =
       List.iter read_values ~f:(fun read_value ->
         assert (width read_value <= Master_to_slave.data_bits));
@@ -445,9 +444,9 @@ struct
       let read_values =
         Read.to_list i.read_values
         |> List.map ~f:(fun s ->
-          if Signal.width s > 32
-          then raise_s [%message "register width > 32 bit"]
-          else Signal.uresize s 32)
+             if Signal.width s > 32
+             then raise_s [%message "register width > 32 bit"]
+             else Signal.uresize s 32)
       in
       let { Slave_with_data.slave
           ; data = { Without_interface.write_values; read_enables }

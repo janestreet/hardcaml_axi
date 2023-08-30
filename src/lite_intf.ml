@@ -23,15 +23,15 @@ module type Lite = sig
     (** Statemachine for conversion between AXI transfers, and the simplified protocol
         defined by [Internal_bus] *)
     module Slave_statemachine :
-      module type of
-      Slave_statemachine.Make (Master_to_slave) (Slave_to_master) (Internal_bus)
+        module type of
+          Slave_statemachine.Make (Master_to_slave) (Slave_to_master) (Internal_bus)
 
     (** Convert a single AXI address range into multiple interface slave spaces. *)
     module Demultiplexer : sig
       type 'a t =
         ( Signal.t Slave_to_master.t
         , Signal.t Internal_bus.Master_to_slave.t list )
-          Slave_with_data.t
+        Slave_with_data.t
       [@@deriving sexp_of]
 
       val create

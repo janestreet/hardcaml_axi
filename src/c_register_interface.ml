@@ -45,22 +45,22 @@ module Make (Regs : Interface.S_with_ast) = struct
     |> List.map
          ~f:
            (String.lstrip ~drop:(function
-              | ' ' -> true
-              | _ -> false))
+             | ' ' -> true
+             | _ -> false))
     |> List.map
          ~f:
            (String.rstrip ~drop:(function
-              | ' ' | '\n' | '\r' -> true
-              | _ -> false))
+             | ' ' | '\n' | '\r' -> true
+             | _ -> false))
     |> List.map ~f:(fun s -> if String.is_empty s then s else indent ^ s)
     |> String.concat ~sep:"\n"
   ;;
 
   let output_struct_type
-        ?(don't_add_trailing_semicolon = false)
-        ?(indent = "")
-        ?(typ_name = "_registers")
-        f
+    ?(don't_add_trailing_semicolon = false)
+    ?(indent = "")
+    ?(typ_name = "_registers")
+    f
     =
     Out_channel.fprintf f "%sstruct %s {\n" indent typ_name;
     let offset = ref 0 in
@@ -68,33 +68,33 @@ module Make (Regs : Interface.S_with_ast) = struct
       Regs.port_names_and_widths
       (get_docs Regs.ast)
       ~f:(fun (register_name, width) docs ->
-        Out_channel.fprintf
-          f
-          "%s    /* %s (bits = %i, address offset = %i)"
-          indent
-          register_name
-          width
-          !offset;
-        offset := !offset + 4;
-        (match docs with
-         | None -> Out_channel.fprintf f " */\n"
-         | Some docs ->
-           Out_channel.fprintf
-             f
-             "\n\n%s\n%s    */\n"
-             (format_doc_string ~indent:(indent ^ "       ") docs)
-             indent);
-        Out_channel.fprintf f "%s    uint32_t %s;\n" indent register_name);
+      Out_channel.fprintf
+        f
+        "%s    /* %s (bits = %i, address offset = %i)"
+        indent
+        register_name
+        width
+        !offset;
+      offset := !offset + 4;
+      (match docs with
+       | None -> Out_channel.fprintf f " */\n"
+       | Some docs ->
+         Out_channel.fprintf
+           f
+           "\n\n%s\n%s    */\n"
+           (format_doc_string ~indent:(indent ^ "       ") docs)
+           indent);
+      Out_channel.fprintf f "%s    uint32_t %s;\n" indent register_name);
     Out_channel.fprintf f "%s}" indent;
     if not don't_add_trailing_semicolon then Out_channel.fprintf f ";\n"
   ;;
 
   let output_struct_address_offsets
-        ?(c90 = true)
-        ?(indent = "")
-        ?(typ_name = "_registers")
-        ?name
-        f
+    ?(c90 = true)
+    ?(indent = "")
+    ?(typ_name = "_registers")
+    ?name
+    f
     =
     let offset = ref 0 in
     let name =

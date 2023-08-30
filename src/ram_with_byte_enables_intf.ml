@@ -14,9 +14,9 @@ module type Ram_with_byte_enables = sig
   module type S = S
 
   module Make
-      (Master_to_slave : Internal_bus_ports.Master_to_slave)
-      (Slave_to_master : Internal_bus_ports.Slave_to_master) :
+    (Master_to_slave : Internal_bus_ports.Master_to_slave)
+    (Slave_to_master : Internal_bus_ports.Slave_to_master) :
     S
-    with module Master_to_slave := Master_to_slave
-     and module Slave_to_master := Slave_to_master
+      with module Master_to_slave := Master_to_slave
+       and module Slave_to_master := Slave_to_master
 end

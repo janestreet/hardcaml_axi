@@ -15,6 +15,6 @@ module Make (C : Master_slave_bus_config.S) = struct
 end
 
 module W32 = Make (struct
-    let addr_bits = 32
-    let data_bits = 32
-  end)
+  let addr_bits = 32
+  let data_bits = 32
+end)
