@@ -26,6 +26,11 @@ module type Lite = sig
         module type of
           Slave_statemachine.Make (Master_to_slave) (Slave_to_master) (Internal_bus)
 
+    (** Statemachine for conversion from Ibus to AXI lite, with the Ibus as the master. *)
+    module Master_statemachine :
+        module type of
+          Master_statemachine.Make (Master_to_slave) (Slave_to_master) (Internal_bus)
+
     (** Convert a single AXI address range into multiple interface slave spaces. *)
     module Demultiplexer : sig
       type 'a t =

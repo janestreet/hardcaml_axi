@@ -10,6 +10,9 @@ module Make (X : Master_slave_bus_config.S) = struct
   module Slave_statemachine =
     Slave_statemachine.Make (Master_to_slave) (Slave_to_master) (Internal_bus)
 
+  module Master_statemachine =
+    Master_statemachine.Make (Master_to_slave) (Slave_to_master) (Internal_bus)
+
   module Demultiplexer = struct
     type 'a t =
       ( Signal.t Slave_to_master.t
