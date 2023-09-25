@@ -37,11 +37,17 @@ struct
       let slave_index =
         select address (address_offset + address_bits - 1) address_offset
       in
+      let address_out_of_range =
+        let top_bits = address_offset + address_bits in
+        if width address <= top_bits then gnd else drop_bottom address top_bits <>:. 0
+      in
       (* mux slave to master interfaces *)
       let slave = mux_and_register_slaves ?reg_spec ~slave_index ~slaves () in
       let masters =
         List.map
-          (bits_lsb (binary_to_onehot slave_index))
+          (bits_lsb
+             (binary_to_onehot slave_index
+              &: ~:(repeat address_out_of_range (1 lsl address_bits))))
           ~f:(fun en ->
             { Master_to_slave.write_valid = master.write_valid &: en
             ; write_first = master.write_first &: en
