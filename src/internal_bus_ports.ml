@@ -14,7 +14,7 @@ module Master_to_slave (C : Master_slave_bus_config.S) = struct
     ; write_data : 'a [@bits C.data_bits]
     ; write_byte_en : 'a [@bits C.data_bits / 8]
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   include C
 end
@@ -25,7 +25,7 @@ module Slave_to_master (C : Master_slave_bus_config.S) = struct
     ; read_ready : 'a
     ; read_data : 'a [@bits C.data_bits]
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   include C
 end

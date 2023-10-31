@@ -12,7 +12,7 @@ struct
       ; slave_dn : 'a Slave_to_master.t [@rtlprefix "slave_dn$"]
       ; master_up : 'a Master_to_slave.t [@rtlprefix "master_up$"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
@@ -20,7 +20,7 @@ struct
       { slave_up : 'a Slave_to_master.t [@rtlprefix "slave_up$"]
       ; master_dn : 'a Master_to_slave.t [@rtlprefix "master_dn$"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module State = struct

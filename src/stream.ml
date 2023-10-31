@@ -4,7 +4,7 @@ include Stream_intf
 
 module Make (X : Config) = struct
   module Dest = struct
-    type 'a t = { tready : 'a } [@@deriving sexp_of, hardcaml]
+    type 'a t = { tready : 'a } [@@deriving hardcaml]
   end
 
   module Source = struct
@@ -16,7 +16,7 @@ module Make (X : Config) = struct
       ; tlast : 'a
       ; tuser : 'a [@bits X.user_bits]
       }
-    [@@deriving sexp_of, hardcaml, compare]
+    [@@deriving hardcaml, compare]
 
     let get_valid (t : Signal.t t) = t.tvalid
     let set_valid t ~valid:tvalid = { t with tvalid }
@@ -76,7 +76,7 @@ module Make (X : Config) = struct
         { source : 'a Source.t
         ; dest : 'a Dest.t
         }
-      [@@deriving sexp_of, hardcaml]
+      [@@deriving hardcaml]
     end
 
     module I = struct
@@ -85,7 +85,7 @@ module Make (X : Config) = struct
         ; clear : 'a
         ; i : 'a IO.t [@rtlprefix "i_"]
         }
-      [@@deriving sexp_of, hardcaml]
+      [@@deriving hardcaml]
     end
 
     let create_io spec (i : _ IO.t) =

@@ -16,7 +16,7 @@ module type Source = sig
     ; tlast : 'a (** High on last word in packet. *)
     ; tuser : 'a (** User specified signalling. *)
     }
-  [@@deriving sexp_of, hardcaml, compare]
+  [@@deriving hardcaml, compare]
 
   val get_valid : Signal.t t -> Signal.t
   val set_valid : Signal.t t -> valid:Signal.t -> Signal.t t
@@ -24,7 +24,7 @@ end
 
 module type Dest = sig
   type 'a t = { tready : 'a (** High when destination is ready to receive data. *) }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 end
 
 (** An AXI-Stream instantiation. *)
@@ -56,7 +56,7 @@ module type S = sig
         { source : 'a Source.t
         ; dest : 'a Dest.t
         }
-      [@@deriving sexp_of, hardcaml]
+      [@@deriving hardcaml]
     end
 
     module I : sig
@@ -65,7 +65,7 @@ module type S = sig
         ; clear : 'a
         ; i : 'a IO.t
         }
-      [@@deriving sexp_of, hardcaml]
+      [@@deriving hardcaml]
     end
 
     val create_io : Reg_spec.t -> Signal.t IO.t -> Signal.t IO.t

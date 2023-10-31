@@ -69,7 +69,7 @@ module type S = sig
         ; master : 'a Master_to_slave.t
         ; read_values : 'a Read.t
         }
-      [@@deriving sexp_of, hardcaml]
+      [@@deriving hardcaml]
     end
 
     module O : sig
@@ -82,7 +82,7 @@ module type S = sig
             registers, this allows the designer to implement any desired synchronisation
             between the individual fields. *)
         }
-      [@@deriving sexp_of, hardcaml]
+      [@@deriving hardcaml]
     end
 
     val write_addresses : int Write.t

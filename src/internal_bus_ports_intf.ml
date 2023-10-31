@@ -11,7 +11,7 @@ module type Master_to_slave = sig
     ; write_data : 'a
     ; write_byte_en : 'a
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   include Master_slave_bus_config.S
 end
@@ -22,7 +22,7 @@ module type Slave_to_master = sig
     ; read_ready : 'a
     ; read_data : 'a
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   include Master_slave_bus_config.S
 end

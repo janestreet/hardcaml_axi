@@ -30,7 +30,7 @@ module type Master_to_slave = sig
     ; arprot : 'a (** Read address protection bits.  Not generally used. *)
     ; rready : 'a (** Read data ready. *)
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   include Master_slave_bus_config.S
 end
@@ -57,7 +57,7 @@ module type Slave_to_master = sig
     ; rresp : 'a (** Read response *)
     ; rvalid : 'a (** Read data valid. *)
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   include Master_slave_bus_config.S
 end

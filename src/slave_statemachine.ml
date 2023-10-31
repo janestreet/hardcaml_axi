@@ -38,7 +38,7 @@ struct
       ; axi_master : 'a Master_to_slave.t
       ; int_slave : 'a Internal_bus.Slave_to_master.t
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
@@ -46,7 +46,7 @@ struct
       { axi_slave : 'a Slave_to_master.t
       ; int_master : 'a Internal_bus.Master_to_slave.t
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   let create _scope (i : _ I.t) =

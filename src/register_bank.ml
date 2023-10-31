@@ -418,7 +418,7 @@ struct
         ; master : 'a Master_to_slave.t
         ; read_values : 'a Read.t
         }
-      [@@deriving sexp_of, hardcaml]
+      [@@deriving hardcaml]
     end
 
     module O = struct
@@ -427,7 +427,7 @@ struct
         ; write_values : 'a Write_with_valid.t
         ; read_enable : 'a Read_enable.t
         }
-      [@@deriving sexp_of, hardcaml]
+      [@@deriving hardcaml]
     end
 
     let write_addresses =

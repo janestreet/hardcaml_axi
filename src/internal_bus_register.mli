@@ -13,7 +13,7 @@ module Make
       ; slave_dn : 'a Slave_to_master.t
       ; master_up : 'a Master_to_slave.t
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O : sig
@@ -21,7 +21,7 @@ module Make
       { slave_up : 'a Slave_to_master.t
       ; master_dn : 'a Master_to_slave.t
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   (** If the Ibus supports write backpressure via [slave_dn.write_ready], the register

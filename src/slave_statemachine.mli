@@ -12,7 +12,7 @@ module Make
       ; axi_master : 'a Master_to_slave.t
       ; int_slave : 'a Internal_bus.Slave_to_master.t
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O : sig
@@ -20,7 +20,7 @@ module Make
       { axi_slave : 'a Slave_to_master.t
       ; int_master : 'a Internal_bus.Master_to_slave.t
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   val create : Scope.t -> Interface.Create_fn(I)(O).t
