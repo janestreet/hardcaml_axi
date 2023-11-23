@@ -14,7 +14,11 @@ struct
       (Signal.t Slave_to_master.t, Signal.t Master_to_slave.t list) Slave_with_data.t
 
     let mux_and_register_slaves ?reg_spec ~slave_index ~slaves () =
-      let slave = Slave_to_master.Of_signal.mux slave_index slaves in
+      let slave =
+        match slaves with
+        | [ hd ] -> hd
+        | _ -> Slave_to_master.Of_signal.mux (Option.value_exn slave_index) slaves
+      in
       match reg_spec with
       | None -> slave
       | Some reg_spec ->
@@ -35,7 +39,9 @@ struct
       let address = master.address in
       let address_bits = Int.ceil_log2 (List.length slaves) in
       let slave_index =
-        select address (address_offset + address_bits - 1) address_offset
+        match address_bits with
+        | 0 -> None
+        | _ -> Some (select address (address_offset + address_bits - 1) address_offset)
       in
       let address_out_of_range =
         let top_bits = address_offset + address_bits in
@@ -46,7 +52,9 @@ struct
       let masters =
         List.map
           (bits_lsb
-             (binary_to_onehot slave_index
+             ((match slave_index with
+               | None -> vdd
+               | Some slave_index -> binary_to_onehot slave_index)
               &: ~:(repeat address_out_of_range (1 lsl address_bits))))
           ~f:(fun en ->
             { Master_to_slave.write_valid = master.write_valid &: en
