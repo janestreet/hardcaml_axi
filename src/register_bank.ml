@@ -330,9 +330,9 @@ struct
       let read_addr = word_address ~master ~size:num_read_values in
       let write_addr = word_address ~master ~size:num_write_values in
       let write_values =
-        let wa1h = binary_to_onehot write_addr in
+        let wa1h = binary_to_onehot write_addr.value in
         List.mapi write_modes ~f:(fun i (mode : Register_mode.t) ->
-          let e = master.write_first &: bit wa1h i in
+          let e = master.write_first &: bit wa1h i &: write_addr.valid in
           let d = master.write_data in
           let e, d =
             match Register_mode.mode mode with
@@ -368,11 +368,11 @@ struct
           | [] -> zero 32
           | [ x ] -> x
           | _ ->
-            tree_mux
-              ~cycles:pipelined_read_depth.internal_mux_cycles
-              ~reg:(reg reg_spec ~enable:vdd)
-              read_addr
-              read_values
+            let cycles = pipelined_read_depth.internal_mux_cycles in
+            mux2
+              read_addr.valid
+              (tree_mux ~cycles ~reg:(reg reg_spec) read_addr.value read_values)
+              (pipeline reg_spec ~n:cycles (ones 32))
         in
         create_slave
           ~read_latency:(total_pipelined_read_depth + 1)
@@ -389,8 +389,12 @@ struct
         if num_read_values = 0
         then []
         else (
-          let read_enables = (binary_to_onehot read_addr).:[num_read_values - 1, 0] in
-          read_enables &: repeat master.read_first (width read_enables) |> bits_lsb)
+          let read_enables =
+            (binary_to_onehot read_addr.value).:[num_read_values - 1, 0]
+          in
+          read_enables
+          &: repeat (master.read_first &: read_addr.valid) (width read_enables)
+          |> bits_lsb)
       in
       { Slave_with_data.slave; data = { write_values; read_enables } }
     ;;

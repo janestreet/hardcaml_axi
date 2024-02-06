@@ -25,5 +25,5 @@ module Make
     [@@deriving hardcaml]
   end
 
-  val hierarchical : Scope.t -> Interface.Create_fn(I)(O).t
+  val hierarchical : ?name:string -> Scope.t -> Interface.Create_fn(I)(O).t
 end

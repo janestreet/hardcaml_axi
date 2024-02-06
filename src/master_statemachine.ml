@@ -104,8 +104,8 @@ struct
     }
   ;;
 
-  let hierarchical scope =
+  let hierarchical ?(name = "master_statemachine") scope =
     let module H = Hierarchy.In_scope (I) (O) in
-    H.hierarchical ~scope ~name:"master_statemachine" create
+    H.hierarchical ~scope ~name create
   ;;
 end

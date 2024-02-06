@@ -1,6 +1,7 @@
 open Base
 open Hardcaml
 module Handshake = Hardcaml_handshake
+module Pipeline_stage_descr = Build_register_pipeline.Pipeline_stage_descr
 
 module type Config = sig
   val data_bits : int
@@ -72,12 +73,7 @@ module type S = sig
     val create : Scope.t -> Signal.t I.t -> Signal.t IO.t
     val hierarchical : ?instance:string -> Scope.t -> Signal.t I.t -> Signal.t IO.t
 
-    module Pipeline_stage_descr : sig
-      type t =
-        { instance_name : string option
-        ; clear : Signal.t
-        }
-    end
+    module Pipeline_stage_descr = Pipeline_stage_descr
 
     (** Instantiates a chain of [n] [Datapath_register] components and wire up the
         [source] and [dest] signals appropriately.
@@ -113,6 +109,8 @@ end
 
 (** AXI4-stream source and destination interface. *)
 module type Stream = sig
+  module Pipeline_stage_descr = Pipeline_stage_descr
+
   (** Config interface for AXI-Stream instantiations.  *)
   module type Config = Config
 

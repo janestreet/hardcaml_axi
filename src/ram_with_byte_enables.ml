@@ -27,14 +27,15 @@ struct
                  size
                  ~write_port:
                    { write_clock = Reg_spec.clock reg_spec
-                   ; write_address = addr
-                   ; write_enable = master.write_first &: bit master.write_byte_en i
+                   ; write_address = addr.value
+                   ; write_enable =
+                       master.write_first &: bit master.write_byte_en i &: addr.valid
                    ; write_data = select master.write_data ((i * 8) + 7) (i * 8)
                    }
                  ~read_port:
                    { read_clock = Reg_spec.clock reg_spec
-                   ; read_address = addr
-                   ; read_enable = master.read_first
+                   ; read_address = addr.value
+                   ; read_enable = master.read_first &: addr.valid
                    })
              |> concat_lsb)
     ; data = ()

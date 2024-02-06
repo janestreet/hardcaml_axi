@@ -29,7 +29,12 @@ module Make
       from [master_up] through. Exablaze is an example of vendor infrastructure that does
       not support write backpressure. *)
   val hierarchical
-    :  ?instance:string
+    :  ?timeout:int
+         (** Optionally set a number of cycles that the IBus register should wait before
+        terminating the read or write request. When a read is terminated, the Ibus
+        register will return -1 as data. *)
+    -> ?instance:string
+    -> ?n:int (** The number of pipeline stages to create, default is 1. *)
     -> supports_wready:bool
     -> Scope.t
     -> Interface.Create_fn(I)(O).t

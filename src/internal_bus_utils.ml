@@ -10,8 +10,9 @@ struct
   let bytes_per_word = Master_to_slave.data_bits / 8
 
   let word_address ~(master : _ Master_to_slave.t) ~size =
+    let word_address = drop_bottom master.address (Int.ceil_log2 bytes_per_word) in
     let addr_bits = if size <= 1 then 1 else Int.ceil_log2 size in
-    uresize (drop_bottom master.address (Int.ceil_log2 bytes_per_word)) addr_bits
+    { With_valid.value = uresize word_address addr_bits; valid = word_address <:. size }
   ;;
 
   let create_slave

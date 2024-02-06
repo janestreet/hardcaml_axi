@@ -71,169 +71,150 @@ module Make (X : Config) = struct
   ;;
 
   module Datapath_register = struct
-    module IO = struct
-      type 'a t =
-        { source : 'a Source.t
-        ; dest : 'a Dest.t
+    module T = struct
+      module IO = struct
+        type 'a t =
+          { source : 'a Source.t
+          ; dest : 'a Dest.t
+          }
+        [@@deriving hardcaml]
+      end
+
+      module I = struct
+        type 'a t =
+          { clock : 'a
+          ; clear : 'a
+          ; i : 'a IO.t [@rtlprefix "i_"]
+          }
+        [@@deriving hardcaml]
+      end
+
+      let create_io spec (i : _ IO.t) =
+        let open Signal in
+        let reg = reg spec in
+        let wire0 () = Always.Variable.wire ~default:gnd in
+        let output_axis_tready = i.dest.tready in
+        let temp_axis_tvalid_reg = wire 1 in
+        let output_axis_tvalid_reg = wire 1 in
+        let output_axis_tvalid_next = wire0 () in
+        let temp_axis_tvalid_next = wire0 () in
+        let store_axis_input_to_output = wire0 () in
+        let store_axis_input_to_temp = wire0 () in
+        let store_axis_temp_to_output = wire0 () in
+        let input_axis_tready_early =
+          output_axis_tready
+          |: (~:temp_axis_tvalid_reg &: (~:output_axis_tvalid_reg |: ~:(i.source.tvalid)))
+        in
+        let input_axis_tready_reg = reg ~enable:vdd input_axis_tready_early in
+        output_axis_tvalid_reg <== reg ~enable:vdd output_axis_tvalid_next.value;
+        temp_axis_tvalid_reg <== reg ~enable:vdd temp_axis_tvalid_next.value;
+        Always.(
+          compile
+            [ (* transfer sink ready state to source *)
+              output_axis_tvalid_next <-- output_axis_tvalid_reg
+            ; temp_axis_tvalid_next <-- temp_axis_tvalid_reg
+            ; store_axis_input_to_output <--. 0
+            ; store_axis_input_to_temp <--. 0
+            ; store_axis_temp_to_output <--. 0
+            ; if_
+                input_axis_tready_reg
+                [ (* input is ready *)
+                  if_
+                    (output_axis_tready |: ~:output_axis_tvalid_reg)
+                    [ (* output is ready or currently not valid, transfer data to output *)
+                      output_axis_tvalid_next <-- i.source.tvalid
+                    ; store_axis_input_to_output <--. 1
+                    ]
+                    [ (* output is not ready, store input in temp *)
+                      temp_axis_tvalid_next <-- i.source.tvalid
+                    ; store_axis_input_to_temp <--. 1
+                    ]
+                ]
+              @@ elif
+                   output_axis_tready
+                   [ (* input is not ready, but output is ready *)
+                     output_axis_tvalid_next <-- temp_axis_tvalid_reg
+                   ; temp_axis_tvalid_next <--. 0
+                   ; store_axis_temp_to_output <--. 1
+                   ]
+                   []
+            ]);
+        let temp = Source.map i.source ~f:(reg ~enable:store_axis_input_to_temp.value) in
+        let output =
+          Source.map
+            (Source.Of_signal.mux2 store_axis_input_to_output.value i.source temp)
+            ~f:
+              (reg
+                 ~enable:
+                   (store_axis_input_to_output.value |: store_axis_temp_to_output.value))
+        in
+        { IO.source = { output with tvalid = output_axis_tvalid_reg }
+        ; dest = { tready = input_axis_tready_reg }
         }
-      [@@deriving hardcaml]
+      ;;
+
+      let create _scope (i : _ I.t) =
+        let spec = Reg_spec.create () ~clock:i.clock ~clear:i.clear in
+        create_io spec i.i
+      ;;
+
+      let hierarchical ?instance scope i =
+        let module Scoped = Hierarchy.In_scope (I) (IO) in
+        Scoped.hierarchical
+          ~scope
+          ~name:("axi_datapath_reg_" ^ Int.to_string X.data_bits)
+          ?instance
+          create
+          i
+      ;;
     end
 
-    module I = struct
-      type 'a t =
-        { clock : 'a
-        ; clear : 'a
-        ; i : 'a IO.t [@rtlprefix "i_"]
-        }
-      [@@deriving hardcaml]
+    include T
+
+    (* Pipeline code *)
+    module Reg_for_pipeline = struct
+      module Config = struct
+        type t = unit
+      end
+
+      let hierarchical ?instance ~config:_ scope ~clock ~clear ~slave_dn ~master_up =
+        let%tydi { source = master_dn; dest = slave_up } =
+          T.hierarchical
+            ?instance
+            scope
+            { clock; clear; i = { source = master_up; dest = slave_dn } }
+        in
+        slave_up, master_dn
+      ;;
     end
 
-    let create_io spec (i : _ IO.t) =
-      let open Signal in
-      let reg = reg spec in
-      let wire0 () = Always.Variable.wire ~default:gnd in
-      let output_axis_tready = i.dest.tready in
-      let temp_axis_tvalid_reg = wire 1 in
-      let output_axis_tvalid_reg = wire 1 in
-      let output_axis_tvalid_next = wire0 () in
-      let temp_axis_tvalid_next = wire0 () in
-      let store_axis_input_to_output = wire0 () in
-      let store_axis_input_to_temp = wire0 () in
-      let store_axis_temp_to_output = wire0 () in
-      let input_axis_tready_early =
-        output_axis_tready
-        |: (~:temp_axis_tvalid_reg &: (~:output_axis_tvalid_reg |: ~:(i.source.tvalid)))
-      in
-      let input_axis_tready_reg = reg ~enable:vdd input_axis_tready_early in
-      output_axis_tvalid_reg <== reg ~enable:vdd output_axis_tvalid_next.value;
-      temp_axis_tvalid_reg <== reg ~enable:vdd temp_axis_tvalid_next.value;
-      Always.(
-        compile
-          [ (* transfer sink ready state to source *)
-            output_axis_tvalid_next <-- output_axis_tvalid_reg
-          ; temp_axis_tvalid_next <-- temp_axis_tvalid_reg
-          ; store_axis_input_to_output <--. 0
-          ; store_axis_input_to_temp <--. 0
-          ; store_axis_temp_to_output <--. 0
-          ; if_
-              input_axis_tready_reg
-              [ (* input is ready *)
-                if_
-                  (output_axis_tready |: ~:output_axis_tvalid_reg)
-                  [ (* output is ready or currently not valid, transfer data to output *)
-                    output_axis_tvalid_next <-- i.source.tvalid
-                  ; store_axis_input_to_output <--. 1
-                  ]
-                  [ (* output is not ready, store input in temp *)
-                    temp_axis_tvalid_next <-- i.source.tvalid
-                  ; store_axis_input_to_temp <--. 1
-                  ]
-              ]
-            @@ elif
-                 output_axis_tready
-                 [ (* input is not ready, but output is ready *)
-                   output_axis_tvalid_next <-- temp_axis_tvalid_reg
-                 ; temp_axis_tvalid_next <--. 0
-                 ; store_axis_temp_to_output <--. 1
-                 ]
-                 []
-          ]);
-      let temp = Source.map i.source ~f:(reg ~enable:store_axis_input_to_temp.value) in
-      let output =
-        Source.map
-          (Source.Of_signal.mux2 store_axis_input_to_output.value i.source temp)
-          ~f:
-            (reg
-               ~enable:
-                 (store_axis_input_to_output.value |: store_axis_temp_to_output.value))
-      in
-      { IO.source = { output with tvalid = output_axis_tvalid_reg }
-      ; dest = { tready = input_axis_tready_reg }
-      }
-    ;;
+    module Pipeline_stage_descr = Build_register_pipeline.Pipeline_stage_descr
 
-    let create _scope (i : _ I.t) =
-      let spec = Reg_spec.create () ~clock:i.clock ~clear:i.clear in
-      create_io spec i.i
-    ;;
+    include struct
+      module B = Build_register_pipeline.Make (Source) (Dest) (Reg_for_pipeline)
 
-    let hierarchical ?instance scope i =
-      let module Scoped = Hierarchy.In_scope (I) (IO) in
-      Scoped.hierarchical
-        ~scope
-        ~name:("axi_datapath_reg_" ^ Int.to_string X.data_bits)
-        ?instance
-        create
-        i
-    ;;
+      let convert_input
+        ({ clock; clear; i = { source = master_up; dest = slave_dn } } : _ I.t)
+        =
+        { B.I.clock; clear; slave_dn; master_up }
+      ;;
 
-    module Pipeline_stage = struct
-      type t =
-        { src_dn : Signal.t Source.t
-        ; dst_up : Signal.t Dest.t
-        ; dst_dn : Signal.t Dest.t
-        }
+      let convert_output { B.O.slave_up = dest; master_dn = source } = { IO.source; dest }
+
+      let pipeline_simple ?instance_name ~n scope i =
+        B.pipeline_simple ?instance:instance_name ~config:() ~n scope (convert_input i)
+        |> convert_output
+      ;;
+
+      let pipeline_expert ~pipeline_stages ~scope ~clock ~(io : _ IO.t) =
+        B.pipeline_expert
+          ~config:()
+          ~pipeline_stages
+          scope
+          (convert_input { I.clock; clear = Signal.gnd; i = io })
+        |> convert_output
+      ;;
     end
-
-    module Pipeline_stage_descr = struct
-      type t =
-        { instance_name : string option
-        ; clear : Signal.t
-        }
-    end
-
-    let build_datapath_reg_pipeline ~scope ~clock =
-      let rec loop ~source ~pipeline_stages =
-        match (pipeline_stages : Pipeline_stage_descr.t list) with
-        | [] -> []
-        | hd :: tl ->
-          let this_stage =
-            let tready = Signal.wire 1 in
-            let component =
-              hierarchical
-                ?instance:hd.instance_name
-                scope
-                { clock; clear = hd.clear; i = { source; dest = { tready } } }
-            in
-            { Pipeline_stage.src_dn = component.source
-            ; dst_up = component.dest
-            ; dst_dn = { tready }
-            }
-          in
-          let remaining_stages = loop ~source:this_stage.src_dn ~pipeline_stages:tl in
-          this_stage :: remaining_stages
-      in
-      fun ~source ~pipeline_stages -> loop ~source ~pipeline_stages
-    ;;
-
-    let pipeline_expert
-      ~(pipeline_stages : Pipeline_stage_descr.t list)
-      ~scope
-      ~clock
-      ~(io : _ IO.t)
-      =
-      let pipeline =
-        build_datapath_reg_pipeline ~scope ~pipeline_stages ~clock ~source:io.source
-      in
-      ignore
-        (List.fold_right pipeline ~init:io.dest ~f:(fun pipeline_stage axi_dest ->
-           Signal.( <== ) pipeline_stage.dst_dn.tready axi_dest.Dest.tready;
-           pipeline_stage.dst_up)
-          : Signal.t Dest.t);
-      match pipeline_stages with
-      | [] -> io
-      | _ ->
-        { IO.source = (List.last_exn pipeline).src_dn
-        ; dest = (List.hd_exn pipeline).dst_up
-        }
-    ;;
-
-    let pipeline_simple ?instance_name ~n scope (i : _ I.t) =
-      let pipeline_stages =
-        List.init n ~f:(Fn.const { Pipeline_stage_descr.instance_name; clear = i.clear })
-      in
-      pipeline_expert ~pipeline_stages ~scope ~clock:i.clock ~io:i.i
-    ;;
 
     let handshake_simple ?instance_name ~n ~clock ~clear scope =
       Handshake.component (fun (io : _ Hardcaml_handshake.IO.t) ->

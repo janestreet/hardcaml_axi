@@ -61,7 +61,10 @@ struct
             ; write_first = master.write_first &: en
             ; read_valid = master.read_valid &: en
             ; read_first = master.read_first &: en
-            ; address = master.address
+            ; address =
+                uresize
+                  (sel_bottom master.address address_offset)
+                  Master_to_slave.addr_bits
             ; write_data = master.write_data
             ; write_byte_en = master.write_byte_en
             })
