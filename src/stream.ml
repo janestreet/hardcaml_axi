@@ -71,6 +71,8 @@ module Make (X : Config) = struct
   ;;
 
   module Datapath_register = struct
+    module Datapath_register_base = Hardcaml_circuits.Datapath_register.Make (Source)
+
     module T = struct
       module IO = struct
         type 'a t =
@@ -89,67 +91,14 @@ module Make (X : Config) = struct
         [@@deriving hardcaml]
       end
 
-      let create_io spec (i : _ IO.t) =
-        let open Signal in
-        let reg = reg spec in
-        let wire0 () = Always.Variable.wire ~default:gnd in
-        let output_axis_tready = i.dest.tready in
-        let temp_axis_tvalid_reg = wire 1 in
-        let output_axis_tvalid_reg = wire 1 in
-        let output_axis_tvalid_next = wire0 () in
-        let temp_axis_tvalid_next = wire0 () in
-        let store_axis_input_to_output = wire0 () in
-        let store_axis_input_to_temp = wire0 () in
-        let store_axis_temp_to_output = wire0 () in
-        let input_axis_tready_early =
-          output_axis_tready
-          |: (~:temp_axis_tvalid_reg &: (~:output_axis_tvalid_reg |: ~:(i.source.tvalid)))
+      let create_io spec ({ source; dest } : _ IO.t) =
+        let base_o =
+          Datapath_register_base.create_io
+            spec
+            { data = source; valid = source.tvalid; ready = dest.tready }
         in
-        let input_axis_tready_reg = reg ~enable:vdd input_axis_tready_early in
-        output_axis_tvalid_reg <== reg ~enable:vdd output_axis_tvalid_next.value;
-        temp_axis_tvalid_reg <== reg ~enable:vdd temp_axis_tvalid_next.value;
-        Always.(
-          compile
-            [ (* transfer sink ready state to source *)
-              output_axis_tvalid_next <-- output_axis_tvalid_reg
-            ; temp_axis_tvalid_next <-- temp_axis_tvalid_reg
-            ; store_axis_input_to_output <--. 0
-            ; store_axis_input_to_temp <--. 0
-            ; store_axis_temp_to_output <--. 0
-            ; if_
-                input_axis_tready_reg
-                [ (* input is ready *)
-                  if_
-                    (output_axis_tready |: ~:output_axis_tvalid_reg)
-                    [ (* output is ready or currently not valid, transfer data to output *)
-                      output_axis_tvalid_next <-- i.source.tvalid
-                    ; store_axis_input_to_output <--. 1
-                    ]
-                    [ (* output is not ready, store input in temp *)
-                      temp_axis_tvalid_next <-- i.source.tvalid
-                    ; store_axis_input_to_temp <--. 1
-                    ]
-                ]
-              @@ elif
-                   output_axis_tready
-                   [ (* input is not ready, but output is ready *)
-                     output_axis_tvalid_next <-- temp_axis_tvalid_reg
-                   ; temp_axis_tvalid_next <--. 0
-                   ; store_axis_temp_to_output <--. 1
-                   ]
-                   []
-            ]);
-        let temp = Source.map i.source ~f:(reg ~enable:store_axis_input_to_temp.value) in
-        let output =
-          Source.map
-            (Source.Of_signal.mux2 store_axis_input_to_output.value i.source temp)
-            ~f:
-              (reg
-                 ~enable:
-                   (store_axis_input_to_output.value |: store_axis_temp_to_output.value))
-        in
-        { IO.source = { output with tvalid = output_axis_tvalid_reg }
-        ; dest = { tready = input_axis_tready_reg }
+        { IO.source = { base_o.data with tvalid = base_o.valid }
+        ; dest = { tready = base_o.ready }
         }
       ;;
 
