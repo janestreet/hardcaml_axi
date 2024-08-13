@@ -2,17 +2,19 @@ open Base
 open Hardcaml
 
 module Make
-  (Master_to_slave : Internal_bus_ports.Master_to_slave)
-  (Slave_to_master : Internal_bus_ports.Slave_to_master) =
+    (Master_to_slave : Internal_bus_ports.Master_to_slave)
+    (Slave_to_master : Internal_bus_ports.Slave_to_master) =
 struct
   open Signal
 
   let bytes_per_word = Master_to_slave.data_bits / 8
 
   let word_address ~(master : _ Master_to_slave.t) ~size =
-    let word_address = drop_bottom master.address (Int.ceil_log2 bytes_per_word) in
+    let word_address = drop_bottom master.address ~width:(Int.ceil_log2 bytes_per_word) in
     let addr_bits = if size <= 1 then 1 else Int.ceil_log2 size in
-    { With_valid.value = uresize word_address addr_bits; valid = word_address <:. size }
+    { With_valid.value = uresize word_address ~width:addr_bits
+    ; valid = word_address <:. size
+    }
   ;;
 
   let create_slave

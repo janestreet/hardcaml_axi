@@ -40,7 +40,7 @@ module Make (X : Config) = struct
       let ap_tlast = ap_tvalid &: make_ap "tlast" source.tlast in
       let make_bits_aps name signal =
         List.range 0 (width signal)
-        |> List.map ~f:(fun n -> make_ap (name ^ Int.to_string n) (bit signal n))
+        |> List.map ~f:(fun n -> make_ap (name ^ Int.to_string n) signal.:(n))
       in
       let aps_tdata = make_bits_aps "tdata" source.tdata in
       let aps_tkeep = make_bits_aps "tkeep" source.tkeep in
@@ -58,16 +58,16 @@ module Make (X : Config) = struct
          require 2^number_of_bits states *)
       List.concat [ [ ap_tlast ]; aps_tdata; aps_tkeep; aps_tstrb ]
       |> List.iter ~f:(fun ap ->
-           let prop =
-             g (ap_tvalid &: ap ==>: (r ap_tready ap |: u ap ap_clear))
-             &: g (ap_tvalid &: ~:ap ==>: (r ap_tready ~:ap |: u ~:ap ap_clear))
-           in
-           let signal_name signal = List.hd_exn (Signal.names signal) in
-           let ap_name = Property.LTL.to_string ~name:signal_name ap in
-           Scope.add_ltl_property
-             scope
-             [%string "tvalid waits for tready without %{ap_name} changing"]
-             prop))
+        let prop =
+          g (ap_tvalid &: ap ==>: (r ap_tready ap |: u ap ap_clear))
+          &: g (ap_tvalid &: ~:ap ==>: (r ap_tready ~:ap |: u ~:ap ap_clear))
+        in
+        let signal_name signal = List.hd_exn (Signal.names signal) in
+        let ap_name = Property.LTL.to_string ~name:signal_name ap in
+        Scope.add_ltl_property
+          scope
+          [%string "tvalid waits for tready without %{ap_name} changing"]
+          prop))
   ;;
 
   module Datapath_register = struct

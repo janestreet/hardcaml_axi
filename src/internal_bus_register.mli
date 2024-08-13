@@ -4,8 +4,8 @@ open Hardcaml
     help with timing.
 *)
 module Make
-  (Master_to_slave : Internal_bus_ports.Master_to_slave)
-  (Slave_to_master : Internal_bus_ports.Slave_to_master) : sig
+    (Master_to_slave : Internal_bus_ports.Master_to_slave)
+    (Slave_to_master : Internal_bus_ports.Slave_to_master) : sig
   module I : sig
     type 'a t =
       { clock : 'a
@@ -20,6 +20,9 @@ module Make
     type 'a t =
       { slave_up : 'a Slave_to_master.t
       ; master_dn : 'a Master_to_slave.t
+      ; timeout_cnt : 'a
+      (** The number of times we have terminated a register read due to the [timeout]
+          being exceeded. *)
       }
     [@@deriving hardcaml]
   end

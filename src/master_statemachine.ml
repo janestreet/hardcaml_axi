@@ -2,9 +2,9 @@ open Base
 open Hardcaml
 
 module Make
-  (Master_to_slave : Lite_ports.Master_to_slave)
-  (Slave_to_master : Lite_ports.Slave_to_master)
-  (Internal_bus : Internal_bus.S) =
+    (Master_to_slave : Lite_ports.Master_to_slave)
+    (Slave_to_master : Lite_ports.Slave_to_master)
+    (Internal_bus : Internal_bus.S) =
 struct
   open Signal
 
@@ -53,7 +53,9 @@ struct
                   i.int_master.read_valid
                   [ axi_master.arvalid <--. 1
                   ; axi_master.araddr
-                    <-- uresize i.int_master.address Master_to_slave.port_widths.araddr
+                    <-- uresize
+                          i.int_master.address
+                          ~width:Master_to_slave.port_widths.araddr
                   ; axi_master.rready <--. 1
                   ; sm.set_next Read
                   ]
@@ -64,7 +66,9 @@ struct
                   ; axi_master.wstrb
                     <-- ones (Internal_bus.Master_to_slave.port_widths.write_data / 8)
                   ; axi_master.awaddr
-                    <-- uresize i.int_master.address Master_to_slave.port_widths.awaddr
+                    <-- uresize
+                          i.int_master.address
+                          ~width:Master_to_slave.port_widths.awaddr
                   ; axi_master.wdata <-- i.int_master.write_data
                   ; axi_master.bready <--. 1
                   ; sm.set_next Write

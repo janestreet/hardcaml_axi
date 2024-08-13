@@ -10,9 +10,9 @@ include struct
 end
 
 module Make
-  (Master : Interface.S)
-  (Slave : Interface.S)
-  (Reg : Reg with module Master := Master and module Slave := Slave) =
+    (Master : Interface.S)
+    (Slave : Interface.S)
+    (Reg : Reg with module Master := Master and module Slave := Slave) =
 struct
   open Reg
 
@@ -78,7 +78,7 @@ struct
       (List.fold_right pipeline ~init:slave_dn ~f:(fun pipeline_stage slave_dn ->
          Slave.Of_signal.( <== ) pipeline_stage.slave_dn slave_dn;
          pipeline_stage.slave_up)
-        : Signal.t Slave.t);
+       : Signal.t Slave.t);
     match pipeline_stages with
     | [] -> { O.master_dn = master_up; slave_up = slave_dn }
     | _ ->

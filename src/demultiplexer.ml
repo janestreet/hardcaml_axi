@@ -4,8 +4,8 @@ open Hardcaml
 module type S = Demultiplexer_intf.S
 
 module Make
-  (Master_to_slave : Internal_bus_ports.Master_to_slave)
-  (Slave_to_master : Internal_bus_ports.Slave_to_master) =
+    (Master_to_slave : Internal_bus_ports.Master_to_slave)
+    (Slave_to_master : Internal_bus_ports.Slave_to_master) =
 struct
   open Signal
 
@@ -41,11 +41,13 @@ struct
       let slave_index =
         match address_bits with
         | 0 -> None
-        | _ -> Some (select address (address_offset + address_bits - 1) address_offset)
+        | _ -> Some address.:[address_offset + address_bits - 1, address_offset]
       in
       let address_out_of_range =
         let top_bits = address_offset + address_bits in
-        if width address <= top_bits then gnd else drop_bottom address top_bits <>:. 0
+        if width address <= top_bits
+        then gnd
+        else drop_bottom address ~width:top_bits <>:. 0
       in
       (* mux slave to master interfaces *)
       let slave = mux_and_register_slaves ?reg_spec ~slave_index ~slaves () in
@@ -55,7 +57,7 @@ struct
              ((match slave_index with
                | None -> vdd
                | Some slave_index -> binary_to_onehot slave_index)
-              &: ~:(repeat address_out_of_range (1 lsl address_bits))))
+              &: ~:(repeat address_out_of_range ~count:(1 lsl address_bits))))
           ~f:(fun en ->
             { Master_to_slave.write_valid = master.write_valid &: en
             ; write_first = master.write_first &: en
@@ -63,8 +65,8 @@ struct
             ; read_first = master.read_first &: en
             ; address =
                 uresize
-                  (sel_bottom master.address address_offset)
-                  Master_to_slave.addr_bits
+                  (sel_bottom master.address ~width:address_offset)
+                  ~width:Master_to_slave.addr_bits
             ; write_data = master.write_data
             ; write_byte_en = master.write_byte_en
             })

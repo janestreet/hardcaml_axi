@@ -77,7 +77,7 @@ module type S = sig
         { slave : 'a Slave_to_master.t
         ; write_values : 'a Write_with_valid.t
         ; read_enable : 'a Read_enable.t
-            (** [read_enable] is a single bit for each field in the register interface that
+        (** [read_enable] is a single bit for each field in the register interface that
             toggles high for one cycle when that register is accessed. For multi-part
             registers, this allows the designer to implement any desired synchronisation
             between the individual fields. *)
@@ -95,7 +95,8 @@ module type S = sig
       -> Interface.Create_fn(I)(O).t
 
     val hierarchical
-      :  ?pipelined_read_depth:pipelined_read_depth
+      :  ?instance:string
+      -> ?pipelined_read_depth:pipelined_read_depth
       -> Scope.t
       -> write_modes:Register_mode.t Write.t
       -> Interface.Create_fn(I)(O).t
@@ -111,10 +112,10 @@ module type Register_bank = sig
       They may be used as fields within a register interface to encode larger or grouped
       values. *)
   module Packed_array (X : sig
-    include Interface.S
+      include Interface.S
 
-    val name : string
-  end) : sig
+      val name : string
+    end) : sig
     include Interface.S with type 'a t = 'a array
 
     val to_packed_array : (module Comb.S with type t = 'a) -> 'a X.t -> 'a t
@@ -152,9 +153,9 @@ module type Register_bank = sig
   end
 
   module Make
-    (Master_to_slave : Internal_bus_ports.Master_to_slave)
-    (Slave_to_master : Internal_bus_ports.Slave_to_master) :
+      (Master_to_slave : Internal_bus_ports.Master_to_slave)
+      (Slave_to_master : Internal_bus_ports.Slave_to_master) :
     S
-      with module Master_to_slave := Master_to_slave
-       and module Slave_to_master := Slave_to_master
+    with module Master_to_slave := Master_to_slave
+     and module Slave_to_master := Slave_to_master
 end

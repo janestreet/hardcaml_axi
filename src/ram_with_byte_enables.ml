@@ -4,8 +4,8 @@ open Hardcaml
 module type S = Ram_with_byte_enables_intf.S
 
 module Make
-  (Master_to_slave : Internal_bus_ports.Master_to_slave)
-  (Slave_to_master : Internal_bus_ports.Slave_to_master) =
+    (Master_to_slave : Internal_bus_ports.Master_to_slave)
+    (Slave_to_master : Internal_bus_ports.Slave_to_master) =
 struct
   open Signal
 
@@ -29,8 +29,8 @@ struct
                    { write_clock = Reg_spec.clock reg_spec
                    ; write_address = addr.value
                    ; write_enable =
-                       master.write_first &: bit master.write_byte_en i &: addr.valid
-                   ; write_data = select master.write_data ((i * 8) + 7) (i * 8)
+                       master.write_first &: master.write_byte_en.:(i) &: addr.valid
+                   ; write_data = master.write_data.:[(i * 8) + 7, i * 8]
                    }
                  ~read_port:
                    { read_clock = Reg_spec.clock reg_spec

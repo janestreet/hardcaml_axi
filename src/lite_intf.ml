@@ -35,8 +35,8 @@ module type Lite = sig
     module Demultiplexer : sig
       type 'a t =
         ( Signal.t Slave_to_master.t
-        , Signal.t Internal_bus.Master_to_slave.t list )
-        Slave_with_data.t
+          , Signal.t Internal_bus.Master_to_slave.t list )
+          Slave_with_data.t
       [@@deriving sexp_of]
 
       val create

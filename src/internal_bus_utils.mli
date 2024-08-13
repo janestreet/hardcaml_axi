@@ -2,8 +2,8 @@ open Base
 open Hardcaml
 
 module Make
-  (Master_to_slave : Internal_bus_ports.Master_to_slave)
-  (Slave_to_master : Internal_bus_ports.Slave_to_master) : sig
+    (Master_to_slave : Internal_bus_ports.Master_to_slave)
+    (Slave_to_master : Internal_bus_ports.Slave_to_master) : sig
   val bytes_per_word : int
 
   (** Word address of [master.address], with the bit width correctly adjusted assuming

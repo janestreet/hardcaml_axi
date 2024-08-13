@@ -33,9 +33,9 @@ end
 (** General functor to construct pipelines of protocol-level registers - i.e. for AXI
     Stream or Internal bus. *)
 module M
-  (Master : Interface.S)
-  (Slave : Interface.S)
-  (Reg : Reg with module Master := Master and module Slave := Slave) =
+    (Master : Interface.S)
+    (Slave : Interface.S)
+    (Reg : Reg with module Master := Master and module Slave := Slave) =
 struct
   open Reg
 
@@ -89,8 +89,8 @@ module type Build_register_pipeline = sig
   module type Reg = Reg
 
   module Make
-    (Master : Interface.S)
-    (Slave : Interface.S)
-    (Reg : Reg with module Master := Master and module Slave := Slave) :
+      (Master : Interface.S)
+      (Slave : Interface.S)
+      (Reg : Reg with module Master := Master and module Slave := Slave) :
     M(Master)(Slave)(Reg).S
 end

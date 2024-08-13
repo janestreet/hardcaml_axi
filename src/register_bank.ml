@@ -4,10 +4,10 @@ open Hardcaml
 module type S = Register_bank_intf.S
 
 module Packed_array (X : sig
-  include Interface.S
+    include Interface.S
 
-  val name : string
-end) =
+    val name : string
+  end) =
 struct
   module T = struct
     type 'a t = 'a array [@@deriving sexp_of]
@@ -33,7 +33,7 @@ struct
     let module C = X.Make_comb (Comb) in
     C.pack x
     |> Comb.split_lsb ~part_width:32 ~exact:false
-    |> List.map ~f:(fun x -> Comb.uresize x 32)
+    |> List.map ~f:(fun x -> Comb.uresize x ~width:32)
     |> Array.of_list
   ;;
 
@@ -63,7 +63,8 @@ struct
 
   let of_packed_array (type a) (module Comb : Comb.S with type t = a) (t : a t) : a X.t =
     let module C = X.Make_comb (Comb) in
-    Comb.uresize (Comb.concat_lsb (Array.to_list t)) X.sum_of_port_widths |> C.unpack
+    Comb.uresize (Comb.concat_lsb (Array.to_list t)) ~width:X.sum_of_port_widths
+    |> C.unpack
   ;;
 
   let bit_positions = X.map2 (X.offsets ()) X.port_widths ~f:(fun o w -> o, w)
@@ -123,11 +124,11 @@ struct
     let loop_set (offset, width) (out_offset, out_word) packed =
       let f word bit_offset bits_left (set_offset, set_word) packed =
         packed.(word)
-          <- set_in_int
-               ~orig:packed.(word)
-               ~offset:bit_offset
-               ~width:bits_left
-               ~v:I.(set_word lsr set_offset);
+        <- set_in_int
+             ~orig:packed.(word)
+             ~offset:bit_offset
+             ~width:bits_left
+             ~v:I.(set_word lsr set_offset);
         set_word
       in
       ignore (loop f (offset, width) (out_offset, out_word) packed : I.t)
@@ -185,27 +186,27 @@ struct
         if start_word = end_word
         then
           packed.(start_word)
-            <- set_in_int
-                 ~orig:packed.(start_word)
-                 ~offset:start_bit_offset
-                 ~width:cur_width
-                 ~v:byte
+          <- set_in_int
+               ~orig:packed.(start_word)
+               ~offset:start_bit_offset
+               ~width:cur_width
+               ~v:byte
         else (
           assert (end_word = start_word + 1);
           let start_byte_bits = 32 - start_bit_offset in
           packed.(start_word)
-            <- set_in_int
-                 ~orig:packed.(start_word)
-                 ~offset:start_bit_offset
-                 ~width:start_byte_bits
-                 ~v:byte;
+          <- set_in_int
+               ~orig:packed.(start_word)
+               ~offset:start_bit_offset
+               ~width:start_byte_bits
+               ~v:byte;
           let end_byte_bits = cur_width - start_byte_bits in
           packed.(end_word)
-            <- set_in_int
-                 ~orig:packed.(end_word)
-                 ~offset:0
-                 ~width:end_byte_bits
-                 ~v:(byte lsr start_byte_bits));
+          <- set_in_int
+               ~orig:packed.(end_word)
+               ~offset:0
+               ~width:end_byte_bits
+               ~v:(byte lsr start_byte_bits));
         loop (offset + 8, width - 8) (byte_pos + 1, bytes) packed)
     in
     X.map bit_positions ~f:(fun (offset, width) packed bytes ->
@@ -278,8 +279,8 @@ struct
 end
 
 module Make
-  (Master_to_slave : Internal_bus_ports.Master_to_slave)
-  (Slave_to_master : Internal_bus_ports.Slave_to_master) =
+    (Master_to_slave : Internal_bus_ports.Master_to_slave)
+    (Slave_to_master : Internal_bus_ports.Slave_to_master) =
 struct
   open Signal
   module Master_to_slave = Master_to_slave
@@ -332,7 +333,7 @@ struct
       let write_values =
         let wa1h = binary_to_onehot write_addr.value in
         List.mapi write_modes ~f:(fun i (mode : Register_mode.t) ->
-          let e = master.write_first &: bit wa1h i &: write_addr.valid in
+          let e = master.write_first &: wa1h.:(i) &: write_addr.valid in
           let d = master.write_data in
           let e, d =
             match Register_mode.mode mode with
@@ -393,7 +394,7 @@ struct
             (binary_to_onehot read_addr.value).:[num_read_values - 1, 0]
           in
           read_enables
-          &: repeat (master.read_first &: read_addr.valid) (width read_enables)
+          &: repeat (master.read_first &: read_addr.valid) ~count:(width read_enables)
           |> bits_lsb)
       in
       { Slave_with_data.slave; data = { write_values; read_enables } }
@@ -448,9 +449,9 @@ struct
       let read_values =
         Read.to_list i.read_values
         |> List.map ~f:(fun s ->
-             if Signal.width s > 32
-             then raise_s [%message "register width > 32 bit"]
-             else Signal.uresize s 32)
+          if Signal.width s > 32
+          then raise_s [%message "register width > 32 bit"]
+          else Signal.uresize s ~width:32)
       in
       let { Slave_with_data.slave
           ; data = { Without_interface.write_values; read_enables }
@@ -471,7 +472,7 @@ struct
         in
         Write.map Write.port_names_and_widths ~f:(fun (n, b) ->
           let { With_valid.valid; value } = List.Assoc.find_exn t n ~equal:String.equal in
-          { With_valid.valid; value = Signal.select value (b - 1) 0 })
+          { With_valid.valid; value = value.Signal.:[b - 1, 0] })
       in
       let read_enable =
         let t = List.zip_exn (Read.to_list Read.port_names) read_enables in
@@ -481,9 +482,10 @@ struct
       { O.slave; write_values; read_enable }
     ;;
 
-    let hierarchical ?pipelined_read_depth scope ~write_modes =
+    let hierarchical ?instance ?pipelined_read_depth scope ~write_modes =
       let module H = Hierarchy.In_scope (I) (O) in
       H.hierarchical
+        ?instance
         ~scope
         ~name:"register_bank"
         (create ?pipelined_read_depth ~write_modes)

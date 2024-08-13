@@ -3,8 +3,8 @@ open Hardcaml
 open Signal
 
 module Make
-  (Master_to_slave : Internal_bus_ports.Master_to_slave)
-  (Slave_to_master : Internal_bus_ports.Slave_to_master) =
+    (Master_to_slave : Internal_bus_ports.Master_to_slave)
+    (Slave_to_master : Internal_bus_ports.Slave_to_master) =
 struct
   module T = struct
     module I = struct
@@ -21,6 +21,7 @@ struct
       type 'a t =
         { slave_up : 'a Slave_to_master.t [@rtlprefix "slave_up$"]
         ; master_dn : 'a Master_to_slave.t [@rtlprefix "master_dn$"]
+        ; timeout_cnt : 'a [@bits 32]
         }
       [@@deriving hardcaml]
     end
@@ -124,7 +125,7 @@ struct
                 ; maybe_timeout
                 ] )
             ; Read_up, [ o.slave_up.read_ready <-- gnd; sm.set_next Idle ]
-            ; Timed_out, [ sm.set_next Idle ]
+            ; Timed_out, [ incr o.timeout_cnt; sm.set_next Idle ]
             ]
         ];
       let o = O.Of_always.value o in
@@ -150,6 +151,7 @@ struct
       type t =
         { supports_wready : bool
         ; timeout : int option
+        ; timeout_cnt : Signal.t option ref
         }
     end
 
@@ -162,7 +164,7 @@ struct
       ~slave_dn
       ~master_up
       =
-      let%tydi { slave_up; master_dn } =
+      let%tydi { slave_up; master_dn; timeout_cnt = timeout_cnt' } =
         T.hierarchical_inner
           ?instance
           ?timeout:config.timeout
@@ -170,6 +172,10 @@ struct
           scope
           { clock; clear; slave_dn; master_up }
       in
+      (* We only expose the timeout counter for the first Ibus register when used in a
+         pipeline. This is OK as if one of the registers timeout, it would imply that all
+         in the chain have (and should be counted as a single timeout). *)
+      if Option.is_none !(config.timeout_cnt) then config.timeout_cnt := Some timeout_cnt';
       slave_up, master_dn
     ;;
   end
@@ -185,14 +191,15 @@ struct
       scope
       ({ clock; clear; slave_dn; master_up } : _ I.t)
       =
+      let timeout_cnt = ref None in
       let%tydi { slave_up; master_dn } =
         B.pipeline_simple
-          ~config:{ supports_wready; timeout }
+          ~config:{ supports_wready; timeout; timeout_cnt }
           ~n
           scope
           { clock; clear; slave_dn; master_up }
       in
-      { O.slave_up; master_dn }
+      { O.slave_up; master_dn; timeout_cnt = Option.value_exn !timeout_cnt }
     ;;
 
     let hierarchical ?timeout ?instance ?n ~supports_wready scope i =

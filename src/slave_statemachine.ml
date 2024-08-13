@@ -2,9 +2,9 @@ open Base
 open Hardcaml
 
 module Make
-  (Master_to_slave : Lite_ports.Master_to_slave)
-  (Slave_to_master : Lite_ports.Slave_to_master)
-  (Internal_bus : Internal_bus.S) =
+    (Master_to_slave : Lite_ports.Master_to_slave)
+    (Slave_to_master : Lite_ports.Slave_to_master)
+    (Internal_bus : Internal_bus.S) =
 struct
   open Signal
 

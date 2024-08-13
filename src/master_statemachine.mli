@@ -4,9 +4,9 @@ open Hardcaml
 *)
 
 module Make
-  (Master_to_slave : Lite_ports.Master_to_slave)
-  (Slave_to_master : Lite_ports.Slave_to_master)
-  (Internal_bus : Internal_bus.S) : sig
+    (Master_to_slave : Lite_ports.Master_to_slave)
+    (Slave_to_master : Lite_ports.Slave_to_master)
+    (Internal_bus : Internal_bus.S) : sig
   module I : sig
     type 'a t =
       { clock : 'a
