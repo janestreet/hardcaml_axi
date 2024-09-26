@@ -96,7 +96,7 @@ module Make (X : Master_slave_bus_config.S) = struct
                 scope
                 ~write_modes
                 { Internal.I.clock = Reg_spec.clock reg_spec
-                ; clear = Reg_spec.clear reg_spec
+                ; clear = Reg_spec.clear_exn reg_spec
                 ; master
                 ; read_values
                 ; clear_write_values = Signal.gnd

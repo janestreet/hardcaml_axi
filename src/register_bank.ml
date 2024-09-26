@@ -342,25 +342,19 @@ struct
             | Hold -> e, d
           in
           (* internal clear, if required *)
-          let update_clear reg_spec =
+          let clear =
             if Register_mode.internal_clear mode
-            then
-              Reg_spec.override
-                ~clear:(Reg_spec.clear reg_spec |: clear_write_values)
-                reg_spec
-            else reg_spec
+            then Some (Reg_spec.clear_exn reg_spec |: clear_write_values)
+            else None
           in
           (* default value after clear *)
-          let update_clear_to reg_spec =
+          let clear_to =
             if Register_mode.clear_to mode <> 0
-            then
-              Reg_spec.override
-                ~clear_to:(of_int ~width:(width d) (Register_mode.clear_to mode))
-                reg_spec
-            else reg_spec
+            then Some (of_int ~width:(width d) (Register_mode.clear_to mode))
+            else None
           in
           { With_valid.valid = reg reg_spec e
-          ; value = reg (reg_spec |> update_clear |> update_clear_to) ~enable:e d
+          ; value = reg reg_spec ?clear ?clear_to ~enable:e d
           })
       in
       let slave =

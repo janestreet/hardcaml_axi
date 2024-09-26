@@ -228,7 +228,7 @@ struct
       (if hierarchical_instance then hierarchical else create)
         scope
         { clock = Reg_spec.clock reg_spec
-        ; clear = Reg_spec.clear reg_spec
+        ; clear = Reg_spec.clear_exn reg_spec
         ; axi_master
         ; int_slave
         }

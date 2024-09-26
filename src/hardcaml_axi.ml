@@ -21,6 +21,7 @@ module type Stream_config = Stream.Config
 module Address_space_decoder = Address_space_decoder
 module Internal_bus = Internal_bus
 module Lite = Lite
+module Lite_controller = Lite_controller
 module Lite_ports = Lite_ports
 module Stream = Stream
 module Register_bank = Register_bank
