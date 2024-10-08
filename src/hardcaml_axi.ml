@@ -4,8 +4,9 @@
 
     Summary;
 
-    - AXI4 is for memory-mapped interfaces and allows high throughput bursts of up to
-      256 data transfer cycles with just a single address phase.
+    - AXI4 (full) is for memory-mapped interfaces and allows high throughput bursts of up to
+      256 data transfer cycles with just a single address phase. Xilinx IPs generally use
+      a subset of this interface, losing some of the optional signals.
 
     - AXI4-Lite is a light-weight, single transaction memory-mapped interface.  It has a
       small logic footprint and is a simple interface to work with both in design and usage.
@@ -19,6 +20,7 @@ module type Bus_config = Master_slave_bus_config.S
 module type Stream_config = Stream.Config
 
 module Address_space_decoder = Address_space_decoder
+module Axi4_xilinx = Axi4_xilinx
 module Internal_bus = Internal_bus
 module Lite = Lite
 module Lite_controller = Lite_controller
