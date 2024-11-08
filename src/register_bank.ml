@@ -344,7 +344,7 @@ struct
           (* internal clear, if required *)
           let clear =
             if Register_mode.internal_clear mode
-            then Some (Reg_spec.clear reg_spec |: clear_write_values)
+            then Some (Reg_spec.clear_exn reg_spec |: clear_write_values)
             else None
           in
           (* default value after clear *)

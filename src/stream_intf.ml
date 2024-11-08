@@ -21,24 +21,25 @@ module type Source = sig
 
   val get_valid : Signal.t t -> Signal.t
   val set_valid : Signal.t t -> valid:Signal.t -> Signal.t t
+  val of_untyped : Signal.t Stream_untyped.Source.t -> Signal.t t
+  val to_untyped : 'a t -> 'a Stream_untyped.Source.t
 end
 
 module type Dest = sig
   type 'a t = { tready : 'a (** High when destination is ready to receive data. *) }
   [@@deriving hardcaml]
+
+  val of_untyped : Signal.t Stream_untyped.Dest.t -> Signal.t t
+  val to_untyped : 'a t -> 'a Stream_untyped.Dest.t
 end
 
 (** An AXI-Stream instantiation. *)
 module type S = sig
   (** AXI4-stream data source ports *)
-  module Source : sig
-    include Source (** @inline *)
-  end
+  module Source : Source
 
   (** AXI4-stream data acknowledgement ports *)
-  module Dest : sig
-    include Dest (** @inline *)
-  end
+  module Dest : Dest
 
   val add_properties
     :  ?clear:Signal.t
@@ -87,7 +88,7 @@ module type S = sig
       -> io:Signal.t IO.t
       -> Signal.t IO.t
 
-    (** Construacts a datapath register pipeline with [n] stages, where all the pipeline
+    (** Constructs a datapath register pipeline with [n] stages, where all the pipeline
         stages have the same clear and same instance name.
     *)
     val pipeline_simple
@@ -125,4 +126,19 @@ module type Stream = sig
 
   (** Instantiates an AXI Stream interface {!S} from the given config. *)
   module Make (X : Config) : S
+
+  module Source_untyped = Stream_untyped.Source
+  module Dest_untyped = Stream_untyped.Dest
+
+  module type S_untyped =
+    S with type 'a Source.t = 'a Source_untyped.t and type 'a Dest.t = 'a Dest_untyped.t
+
+  (** Similar to [Make], but use [Source_untyped.t] and [Dest_untyped.t] for its
+      [Source.t] and [Dest.t] respectively. This sacrifices type-safety by not
+      creating a fresh-type for every invocation of [Make], but can easier to work
+      with in some cases, especially use cases with heavily nested functors.
+
+      Users should by default prefer using [Make] rather than [Make_untyped].
+  *)
+  module Make_untyped (X : Config) : S_untyped
 end
