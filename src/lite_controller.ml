@@ -25,6 +25,7 @@ module Make (X : Master_slave_bus_config.S) = struct
       | ADDRESS
       | DATA
       | INCREMENTING
+      | LOCK
     [@@deriving enumerate, sexp_of, variants]
 
     let offset = Variants.to_rank
@@ -74,6 +75,7 @@ module Make (X : Master_slave_bus_config.S) = struct
     let address = Always.Variable.reg ~width:X.addr_bits spec in
     let incrementing = Always.Variable.reg ~width:1 spec in
     let first = Always.Variable.reg ~width:1 spec in
+    let%hw_var lock = Always.Variable.reg ~width:1 spec in
     Always.(
       compile
         [ int_master.address <-- address.value
@@ -95,6 +97,11 @@ module Make (X : Master_slave_bus_config.S) = struct
                         [ int_slave.write_ready <-- vdd
                         ; incrementing <-- lsb m_ibus.write_data
                         ]
+                    ; when_
+                        (m_ibus.address
+                         ==:. Registers.byte_addr LOCK
+                         &: ~:(lsb m_ibus.write_data))
+                        [ int_slave.write_ready <-- vdd; lock <-- gnd ]
                     ]
                 ; when_
                     (m_ibus.read_valid &: m_ibus.read_first)
@@ -111,6 +118,12 @@ module Make (X : Master_slave_bus_config.S) = struct
                         [ int_slave.read_ready <-- vdd
                         ; int_slave.read_data
                           <-- uresize incrementing.value ~width:X.data_bits
+                        ]
+                    ; when_
+                        (m_ibus.address ==:. Registers.byte_addr LOCK)
+                        [ int_slave.read_ready <-- vdd
+                        ; int_slave.read_data <-- uresize lock.value ~width:X.data_bits
+                        ; lock <-- vdd
                         ]
                     ]
                 ] )

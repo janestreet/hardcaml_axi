@@ -1,14 +1,19 @@
 open Base
 open Hardcaml
 include Stream_intf
+module Source_untyped = Stream_untyped.Source
+module Dest_untyped = Stream_untyped.Dest
 
 module Make (X : Config) = struct
   module Dest = struct
-    type 'a t = { tready : 'a } [@@deriving hardcaml]
+    type 'a t = 'a Dest_untyped.t = { tready : 'a } [@@deriving hardcaml]
+
+    let of_untyped { Dest_untyped.tready } = { tready }
+    let to_untyped { tready } = { Stream_untyped.Dest.tready }
   end
 
   module Source = struct
-    type 'a t =
+    type 'a t = 'a Source_untyped.t =
       { tvalid : 'a
       ; tdata : 'a [@bits X.data_bits]
       ; tkeep : 'a [@bits X.data_bits / 8]
@@ -20,6 +25,16 @@ module Make (X : Config) = struct
 
     let get_valid (t : Signal.t t) = t.tvalid
     let set_valid t ~valid:tvalid = { t with tvalid }
+
+    let of_untyped { Source_untyped.tvalid; tdata; tkeep; tstrb; tlast; tuser } =
+      let x = { tvalid; tdata; tkeep; tstrb; tlast; tuser } in
+      Of_signal.assert_widths x;
+      x
+    ;;
+
+    let to_untyped { tvalid; tdata; tkeep; tstrb; tlast; tuser } =
+      { Stream_untyped.Source.tvalid; tdata; tkeep; tstrb; tlast; tuser }
+    ;;
   end
 
   let add_properties
@@ -175,3 +190,8 @@ module Make (X : Config) = struct
     ;;
   end
 end
+
+module type S_untyped =
+  S with type 'a Source.t = 'a Source_untyped.t and type 'a Dest.t = 'a Dest_untyped.t
+
+module Make_untyped = Make
