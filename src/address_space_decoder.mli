@@ -1,6 +1,5 @@
-(** Construction of address space decoders. This supports a slower but more complete full address
-    space decoder and the faster but incomplete partial address decoder.
-*)
+(** Construction of address space decoders. This supports a slower but more complete full
+    address space decoder and the faster but incomplete partial address decoder. *)
 
 open Base
 open Hardcaml
@@ -16,8 +15,7 @@ module Address_space : sig
   include Comparable.S with type t := t
 end
 
-(** Collection of address spaces held in sorted order and checked to be non-overlapping.
-*)
+(** Collection of address spaces held in sorted order and checked to be non-overlapping. *)
 module Address_spaces : sig
   type t [@@deriving sexp_of]
 

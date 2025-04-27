@@ -3,11 +3,10 @@ open Hardcaml
 
 (** A bank of read/write registers connected to a Master interface.
 
-    The register bank connects a set of IO ports in a user design to an
-    [Internal_bus] master (which is, generally, a CPU).  The master device
-    writes values over the bus and these appear on the [write_values] list for
-    presentation to the user design.  The [read_values] list is provided by the
-    user design and is read by the master.  *)
+    The register bank connects a set of IO ports in a user design to an [Internal_bus]
+    master (which is, generally, a CPU). The master device writes values over the bus and
+    these appear on the [write_values] list for presentation to the user design. The
+    [read_values] list is provided by the user design and is read by the master. *)
 module type S = sig
   module Master_to_slave : Internal_bus_ports.Master_to_slave
   module Slave_to_master : Internal_bus_ports.Slave_to_master
@@ -28,29 +27,25 @@ module type S = sig
   (** Creates a register bank.
 
       {[
-        let { slave; write_values } =
-          create ~reg_spec ~master ~write_modes ~read_values
+        let { slave; write_values } = create ~reg_spec ~master ~write_modes ~read_values
       ]}
 
-      [write_modes] specifies what behavior the corresponding [write_value]
-      should have: hold the value written, or toggle back to some known value
-      after 1 cycle.
+      [write_modes] specifies what behavior the corresponding [write_value] should have:
+      hold the value written, or toggle back to some known value after 1 cycle.
 
-      [write_values] can be connected to [read_values] to create a read/write
-      register.
+      [write_values] can be connected to [read_values] to create a read/write register.
 
-      Writes ignore [master.write_byte_en], therefore only aligned 32 bit
-      transfers are fully supported.
+      Writes ignore [master.write_byte_en], therefore only aligned 32 bit transfers are
+      fully supported.
 
-      [clear_write_values] clears write registers whose mode is configured with
-      mode [internal_clear = true].
-  *)
+      [clear_write_values] clears write registers whose mode is configured with mode
+      [internal_clear = true]. *)
 
   val create
     :  ?pipelined_read_depth:
          pipelined_read_depth
          (* Default is zero internal and external cycles of latency *)
-    -> Reg_spec.t
+    -> Signal.Reg_spec.t
     -> clear_write_values:Signal.t
     -> master:Signal.t Master_to_slave.t
     -> write_modes:Register_mode.t list
@@ -122,7 +117,7 @@ module type Register_bank = sig
 
     val to_packed_array_latch_on_read
       :  read_latency:int
-      -> Reg_spec.t
+      -> Signal.Reg_spec.t
       -> Signal.t X.t
       -> Signal.t t
       -> Signal.t t

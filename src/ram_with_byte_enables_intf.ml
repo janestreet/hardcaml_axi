@@ -7,7 +7,11 @@ module type S = sig
 
   type t = (Signal.t Slave_to_master.t, unit) Slave_with_data.t [@@deriving sexp_of]
 
-  val create : reg_spec:Reg_spec.t -> master:Signal.t Master_to_slave.t -> size:int -> t
+  val create
+    :  reg_spec:Signal.Reg_spec.t
+    -> master:Signal.t Master_to_slave.t
+    -> size:int
+    -> t
 end
 
 module type Ram_with_byte_enables = sig

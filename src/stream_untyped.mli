@@ -1,5 +1,4 @@
-(** An untyped AXI Stream interface. See [Stream.Make_untyped] for more information.
-*)
+(** An untyped AXI Stream interface. See [Stream.Make_untyped] for more information. *)
 
 open Hardcaml
 

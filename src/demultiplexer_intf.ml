@@ -1,38 +1,38 @@
 open Base
 open Hardcaml
 
-(** A [Demultiplexer] connects one master to many slaves.
-    {!Demultiplexer.create} takes the master outputs and slave outputs and
-    creates a demultiplexer circuit and returns the outputs of the
-    demultiplexer.
+(** A [Demultiplexer] connects one master to many slaves. {!Demultiplexer.create} takes
+    the master outputs and slave outputs and creates a demultiplexer circuit and returns
+    the outputs of the demultiplexer.
 
-    Each slave space is of size [1 << address_offset] bytes. Indiviual slaves
-    are accessed using [slave_address_bits] bits where
+    Each slave space is of size [1 << address_offset] bytes. Indiviual slaves are accessed
+    using [slave_address_bits] bits where
 
     {[
       slave_address_bits = Int.ceil_log2 (List.length slaves)
-    ]}.
+    ]}
+    .
 
-    The bits of [master.address] which are used as the input are then the
-    bits from [address_offset] to [address_offset + slave_address_bits - 1].
+    The bits of [master.address] which are used as the input are then the bits from
+    [address_offset] to [address_offset + slave_address_bits - 1].
 
-    For example, if [demux] was created with two slaves and [address_offset]
-    equal to [10], then in order to write to address [0xcd] of the first
-    slave, you would set the address as follows:
+    For example, if [demux] was created with two slaves and [address_offset] equal to
+    [10], then in order to write to address [0xcd] of the first slave, you would set the
+    address as follows:
 
     {[
       demux.master.address := 0xcd
     ]}
 
-    If you instead wanted to write to address [0xaf] of the second slave, you
-    would set the address as follows:
+    If you instead wanted to write to address [0xaf] of the second slave, you would set
+    the address as follows:
 
     {[
       demux.master.address := 0x4af
     ]}
 
-    which is equivalent to setting the 10th bit high, which is the first
-    index bit of the demux:
+    which is equivalent to setting the 10th bit high, which is the first index bit of the
+    demux:
 
     {[
       demux.master.address := (0b1 lsl 10) lor 0xaf
@@ -44,7 +44,7 @@ module type S = sig
   type t = (Signal.t Slave_to_master.t, Signal.t Master_to_slave.t list) Slave_with_data.t
 
   val create
-    :  ?reg_spec:Reg_spec.t
+    :  ?reg_spec:Signal.Reg_spec.t
     -> Scope.t
     -> address_offset:int
     -> master:Signal.t Master_to_slave.t
@@ -71,11 +71,11 @@ module type S = sig
     val create
       :  Scope.t
       -> log_size_in_bytes:int
-      -> reg_spec:Reg_spec.t
+      -> reg_spec:Signal.Reg_spec.t
       -> int_master:Signal.t Master_to_slave.t
       -> t
 
-    (** Add a slave.  Slaves spaces will be created in the order added. *)
+    (** Add a slave. Slaves spaces will be created in the order added. *)
     val add_slave : t -> Slave_instance.t
 
     (** Construct the slave demultiplexer hardware for the given number of interfaces and
@@ -86,7 +86,7 @@ module type S = sig
     val with_slave_demultiplexer
       :  Scope.t
       -> log_size_in_bytes:int
-      -> reg_spec:Reg_spec.t
+      -> reg_spec:Signal.Reg_spec.t
       -> int_master:Signal.t Master_to_slave.t
       -> f:(t -> 'a)
       -> (Signal.t Slave_to_master.t, 'a) Slave_with_data.t

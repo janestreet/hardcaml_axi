@@ -49,9 +49,9 @@ module type S = sig
     -> Scope.t
     -> unit
 
-  (** When placed between two components which produce/consume an AXI stream, this
-      module ensures that every output signal is registerd. It fully supports the
-      [tvalid]/[tready] handshake protocol.*)
+  (** When placed between two components which produce/consume an AXI stream, this module
+      ensures that every output signal is registerd. It fully supports the
+      [tvalid]/[tready] handshake protocol. *)
   module Datapath_register : sig
     module IO : sig
       type 'a t =
@@ -70,7 +70,7 @@ module type S = sig
       [@@deriving hardcaml]
     end
 
-    val create_io : Reg_spec.t -> Signal.t IO.t -> Signal.t IO.t
+    val create_io : Signal.Reg_spec.t -> Signal.t IO.t -> Signal.t IO.t
     val create : Scope.t -> Signal.t I.t -> Signal.t IO.t
     val hierarchical : ?instance:string -> Scope.t -> Signal.t I.t -> Signal.t IO.t
 
@@ -79,8 +79,7 @@ module type S = sig
     (** Instantiates a chain of [n] [Datapath_register] components and wire up the
         [source] and [dest] signals appropriately.
 
-        In most cases, you probably want to use [pipeline_simple].
-    *)
+        In most cases, you probably want to use [pipeline_simple]. *)
     val pipeline_expert
       :  pipeline_stages:Pipeline_stage_descr.t list
       -> scope:Scope.t
@@ -89,8 +88,7 @@ module type S = sig
       -> Signal.t IO.t
 
     (** Constructs a datapath register pipeline with [n] stages, where all the pipeline
-        stages have the same clear and same instance name.
-    *)
+        stages have the same clear and same instance name. *)
     val pipeline_simple
       :  ?instance_name:string
       -> n:int
@@ -112,16 +110,16 @@ end
 module type Stream = sig
   module Pipeline_stage_descr = Pipeline_stage_descr
 
-  (** Config interface for AXI-Stream instantiations.  *)
+  (** Config interface for AXI-Stream instantiations. *)
   module type Config = Config
 
-  (** Data acknowledgement interface for AXI-Stream instantiations.  *)
+  (** Data acknowledgement interface for AXI-Stream instantiations. *)
   module type Dest = Dest
 
-  (** Data Source interface for AXI-Stream instantiations.  *)
+  (** Data Source interface for AXI-Stream instantiations. *)
   module type Source = Source
 
-  (** AXI Stream interfaces for instantiations.  *)
+  (** AXI Stream interfaces for instantiations. *)
   module type S = S
 
   (** Instantiates an AXI Stream interface {!S} from the given config. *)
@@ -134,11 +132,10 @@ module type Stream = sig
     S with type 'a Source.t = 'a Source_untyped.t and type 'a Dest.t = 'a Dest_untyped.t
 
   (** Similar to [Make], but use [Source_untyped.t] and [Dest_untyped.t] for its
-      [Source.t] and [Dest.t] respectively. This sacrifices type-safety by not
-      creating a fresh-type for every invocation of [Make], but can easier to work
-      with in some cases, especially use cases with heavily nested functors.
+      [Source.t] and [Dest.t] respectively. This sacrifices type-safety by not creating a
+      fresh-type for every invocation of [Make], but can easier to work with in some
+      cases, especially use cases with heavily nested functors.
 
-      Users should by default prefer using [Make] rather than [Make_untyped].
-  *)
+      Users should by default prefer using [Make] rather than [Make_untyped]. *)
   module Make_untyped (X : Config) : S_untyped
 end

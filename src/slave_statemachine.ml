@@ -234,7 +234,7 @@ struct
         }
     in
     let { Slave_with_data.slave = int_slave_s; data } = create_fn int_master in
-    Internal_bus.Slave_to_master.iter2 int_slave int_slave_s ~f:( <== );
+    Internal_bus.Slave_to_master.iter2 int_slave int_slave_s ~f:( <-- );
     { Slave_with_data.slave = axi_slave; data }
   ;;
 end

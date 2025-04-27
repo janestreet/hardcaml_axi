@@ -15,8 +15,7 @@ open! Hardcaml
     - write response
     - read data
 
-    Handshakes using [valid] and [ready] are performed on each
-    channel.
+    Handshakes using [valid] and [ready] are performed on each channel.
 
     The missing signals from the AXI4 specification are:
 
@@ -24,8 +23,7 @@ open! Hardcaml
     - WUSER
     - ARLOCK, ARCACHE, ARPROT, ARQOS, ARREGION, ARUSER
     - BUSER
-    - RUSER
-*)
+    - RUSER *)
 
 module type Config = sig
   val addr_bits : int

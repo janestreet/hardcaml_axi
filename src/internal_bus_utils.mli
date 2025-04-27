@@ -17,7 +17,7 @@ module Make
   val create_slave
     :  read_latency:int
     -> write_latency:int
-    -> reg_spec:Reg_spec.t
+    -> reg_spec:Signal.Reg_spec.t
     -> master:Signal.t Master_to_slave.t
     -> read_data:Signal.t
     -> Signal.t Slave_to_master.t

@@ -18,10 +18,10 @@ module Make (X : Master_slave_bus_config.S) : sig
       | ADDRESS (** Address to read/write from *)
       | DATA
       (** Reading triggers an AXI read from the specified ADDRESS and returns the data,
-        writing triggers an AXI write of the data to the specified ADDRESS. *)
+          writing triggers an AXI write of the data to the specified ADDRESS. *)
       | INCREMENTING
       (** After a read/write, if the lsb of this register is set, the ADDRESS field
-        automatically increments by [X.data_bits / 8] bytes. *)
+          automatically increments by [X.data_bits / 8] bytes. *)
       | LOCK
       (** A very simple lock. Read from this register to acquire the lock, reading a 0
           means the lock was acquired, 1 means the lock was not acquired. Write a 0 to the

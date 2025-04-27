@@ -102,7 +102,7 @@ struct
         if t.master_is_set
         then raise_s [%message "Slave_demultiplexer - master is already set"]
         else (
-          Master_to_slave.iter2 t.master master ~f:Signal.( <== );
+          Master_to_slave.iter2 t.master master ~f:Signal.( <-- );
           t.master_is_set <- true)
       ;;
 
@@ -112,7 +112,7 @@ struct
         if t.slave_is_set
         then raise_s [%message "Slave_demultiplexer - slave is already set"]
         else (
-          Slave_to_master.iter2 t.slave slave ~f:Signal.( <== );
+          Slave_to_master.iter2 t.slave slave ~f:Signal.( <-- );
           t.slave_is_set <- true)
       ;;
     end

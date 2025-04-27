@@ -61,8 +61,8 @@ struct
     (** Expert pipeline function that constructs a pipeline of registers corresponding to
         the list [pipeline_stages] of [Pipeline_stage_descr.t]
 
-        NOTE: This module does NOT use the [clear] signal that is passed in the [I.t]!
-        It uses the individual [clear]s passed for each element of [pipeline_stages] *)
+        NOTE: This module does NOT use the [clear] signal that is passed in the [I.t]! It
+        uses the individual [clear]s passed for each element of [pipeline_stages] *)
     val pipeline_expert
       :  config:Config.t
       -> pipeline_stages:Pipeline_stage_descr.t list

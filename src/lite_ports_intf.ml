@@ -14,20 +14,19 @@ open! Hardcaml
     - write response
     - read data
 
-    Handshakes using [valid] and [ready] are performed on each
-    channel. *)
+    Handshakes using [valid] and [ready] are performed on each channel. *)
 module type Master_to_slave = sig
   type 'a t =
     { awaddr : 'a (** Write address. *)
     ; awvalid : 'a (** Write address valid. *)
-    ; awprot : 'a (** Write address protection bits.  Not generally used. *)
+    ; awprot : 'a (** Write address protection bits. Not generally used. *)
     ; wdata : 'a (** Write data. *)
     ; wstrb : 'a (** Valid write data bytes. *)
     ; wvalid : 'a (** Write data valid. *)
     ; bready : 'a (** Write response ready *)
     ; araddr : 'a (** Read address *)
     ; arvalid : 'a (** Read address valid. *)
-    ; arprot : 'a (** Read address protection bits.  Not generally used. *)
+    ; arprot : 'a (** Read address protection bits. Not generally used. *)
     ; rready : 'a (** Read data ready. *)
     }
   [@@deriving hardcaml]

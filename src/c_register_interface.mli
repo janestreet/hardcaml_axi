@@ -14,7 +14,7 @@ module Make (Regs : Interface.S_with_ast) : sig
 
   (** Output address offset of a Hardcaml interface. Assumes that there is a register
       interface of [typ_name] created prior. If [c90] is false gcc style initializers are
-      used.*)
+      used. *)
   val output_struct_address_offsets
     :  ?c90:bool (** default is [true] *)
     -> ?indent:string
