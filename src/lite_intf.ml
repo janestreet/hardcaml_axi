@@ -9,12 +9,11 @@ module type Lite = sig
   module type Slave_to_master = Slave_to_master
 
   module Make (X : Master_slave_bus_config.S) : sig
-    (** A simplified protocol for reading from and writing to slave space within
-        a hardware design.  Reads and writes are framed by [_valid] and [_first]
-        signals.  The [_valid] signal will be high throughout the transaction,
-        while [_first] will toggle high only on the first cycle of a transaction.
-        The [_ready] signals, driven by the slave, indicate completion of
-        a transaction. *)
+    (** A simplified protocol for reading from and writing to slave space within a
+        hardware design. Reads and writes are framed by [_valid] and [_first] signals. The
+        [_valid] signal will be high throughout the transaction, while [_first] will
+        toggle high only on the first cycle of a transaction. The [_ready] signals, driven
+        by the slave, indicate completion of a transaction. *)
     module Internal_bus : Internal_bus.S
 
     module Master_to_slave : Master_to_slave
@@ -41,7 +40,7 @@ module type Lite = sig
 
       val create
         :  Scope.t
-        -> reg_spec:Reg_spec.t
+        -> reg_spec:Signal.Reg_spec.t
         -> address_offset:int
         -> axi_master:Signal.t Master_to_slave.t
         -> int_slaves:Signal.t Internal_bus.Slave_to_master.t list
@@ -54,7 +53,7 @@ module type Lite = sig
 
       val create
         :  Scope.t
-        -> reg_spec:Reg_spec.t
+        -> reg_spec:Signal.Reg_spec.t
         -> axi_master:Signal.t Master_to_slave.t
         -> size:int
         -> t
@@ -69,7 +68,7 @@ module type Lite = sig
 
       val create
         :  Scope.t
-        -> reg_spec:Reg_spec.t
+        -> reg_spec:Signal.Reg_spec.t
         -> axi_master:Signal.t Master_to_slave.t
         -> write_modes:Register_mode.t list
         -> read_values:Signal.t list
@@ -85,7 +84,7 @@ module type Lite = sig
 
         val create
           :  Scope.t
-          -> reg_spec:Reg_spec.t
+          -> reg_spec:Signal.Reg_spec.t
           -> axi_master:Signal.t Master_to_slave.t
           -> write_modes:Register_mode.t Write.t
           -> read_values:Signal.t Read.t

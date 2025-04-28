@@ -1,7 +1,6 @@
 open Hardcaml
 
-(** A simple statemachine that can be used to drive a AXI lite slave from a Ibus master.
-*)
+(** A simple statemachine that can be used to drive a AXI lite slave from a Ibus master. *)
 
 module Make
     (Master_to_slave : Lite_ports.Master_to_slave)

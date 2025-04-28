@@ -350,7 +350,7 @@ struct
           (* default value after clear *)
           let clear_to =
             if Register_mode.clear_to mode <> 0
-            then Some (of_int ~width:(width d) (Register_mode.clear_to mode))
+            then Some (of_int_trunc ~width:(width d) (Register_mode.clear_to mode))
             else None
           in
           { With_valid.valid = reg reg_spec e

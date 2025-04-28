@@ -76,7 +76,7 @@ struct
     let pipeline = build_pipeline ~config ~scope ~clock ~master_up ~pipeline_stages in
     ignore
       (List.fold_right pipeline ~init:slave_dn ~f:(fun pipeline_stage slave_dn ->
-         Slave.Of_signal.( <== ) pipeline_stage.slave_dn slave_dn;
+         Slave.Of_signal.( <-- ) pipeline_stage.slave_dn slave_dn;
          pipeline_stage.slave_up)
        : Signal.t Slave.t);
     match pipeline_stages with

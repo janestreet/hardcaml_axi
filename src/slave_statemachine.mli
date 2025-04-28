@@ -29,7 +29,7 @@ module Make
   val with_slave_statemachine
     :  ?hierarchical_instance:bool (** Default is [false] *)
     -> Scope.t
-    -> reg_spec:Reg_spec.t
+    -> reg_spec:Signal.Reg_spec.t
     -> axi_master:Signal.t Master_to_slave.t
     -> create_fn:
          (Signal.t Internal_bus.Master_to_slave.t

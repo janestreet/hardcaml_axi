@@ -118,7 +118,7 @@ module Make (X : Config) = struct
       ;;
 
       let create _scope (i : _ I.t) =
-        let spec = Reg_spec.create () ~clock:i.clock ~clear:i.clear in
+        let spec = Signal.Reg_spec.create () ~clock:i.clock ~clear:i.clear in
         create_io spec i.i
       ;;
 

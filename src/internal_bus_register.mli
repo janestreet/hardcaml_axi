@@ -1,8 +1,7 @@
 open Hardcaml
 
 (** Creates a simple state machine on an Ibus that can be used to register the datapath to
-    help with timing.
-*)
+    help with timing. *)
 module Make
     (Master_to_slave : Internal_bus_ports.Master_to_slave)
     (Slave_to_master : Internal_bus_ports.Slave_to_master) : sig
@@ -34,8 +33,8 @@ module Make
   val hierarchical
     :  ?timeout:int
          (** Optionally set a number of cycles that the IBus register should wait before
-        terminating the read or write request. When a read is terminated, the Ibus
-        register will return -1 as data. *)
+             terminating the read or write request. When a read is terminated, the Ibus
+             register will return -1 as data. *)
     -> ?instance:string
     -> ?n:int (** The number of pipeline stages to create, default is 1. *)
     -> supports_wready:bool
