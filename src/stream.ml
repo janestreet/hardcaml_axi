@@ -85,6 +85,33 @@ module Make (X : Config) = struct
           prop))
   ;;
 
+  module Chain = struct
+    module Transform = struct
+      type t = (Signal.t Source.t, Signal.t Source.t) Handshake.t
+    end
+
+    module Transform_constructor = struct
+      type t = clock:Signal.t -> clear:Signal.t -> Scope.t -> Transform.t
+    end
+
+    let transform f ~clock ~clear scope =
+      Handshake.component (fun (io : _ Hardcaml_handshake.IO.t) ->
+        let ((src, dst) : Signal.t Source.t * Signal.t Dest.t) =
+          f ~clock ~clear scope io.data { Dest.tready = io.ack }
+        in
+        { Hardcaml_handshake.IO.data = src; ack = dst.tready })
+    ;;
+
+    type t = (Signal.t Source.t, Signal.t Source.t) Handshake.t
+
+    let ( >>> ) = Handshake.( >>> )
+
+    let run (t : t) (up : Signal.t Source.t) (dn : Signal.t Dest.t) =
+      let handshake = Handshake.run t { data = up; ack = dn.tready } in
+      handshake.data, { Dest.tready = handshake.ack }
+    ;;
+  end
+
   module Datapath_register = struct
     module Datapath_register_base = Hardcaml_circuits.Datapath_register.Make (Source)
 
@@ -180,13 +207,11 @@ module Make (X : Config) = struct
       ;;
     end
 
-    let handshake_simple ?instance_name ~n ~clock ~clear scope =
-      Handshake.component (fun (io : _ Hardcaml_handshake.IO.t) ->
-        let i =
-          { I.clock; clear; i = { source = io.data; dest = { tready = io.ack } } }
-        in
+    let handshake_simple ?instance_name ?(n = 1) =
+      Chain.transform (fun ~clock ~clear scope src dst ->
+        let i = { I.clock; clear; i = { source = src; dest = dst } } in
         let o = pipeline_simple ?instance_name ~n scope i in
-        { Hardcaml_handshake.IO.data = o.source; ack = o.dest.tready })
+        o.source, o.dest)
     ;;
   end
 end

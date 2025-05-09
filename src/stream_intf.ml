@@ -49,8 +49,40 @@ module type S = sig
     -> Scope.t
     -> unit
 
+  (** Chain is a convenience wrapper over Hardcaml_handshake that allows for a quick
+      construction of a chain of Axi transformations and handles the tready signaling we
+      would usually do manually. *)
+  module Chain : sig
+    module Transform : sig
+      type t = (Signal.t Source.t, Signal.t Source.t) Handshake.t
+    end
+
+    module Transform_constructor : sig
+      type t = clock:Signal.t -> clear:Signal.t -> Scope.t -> Transform.t
+    end
+
+    type t = (Signal.t Source.t, Signal.t Source.t) Handshake.t
+
+    val ( >>> ) : ('a, 'b) Handshake.t -> ('b, 'c) Handshake.t -> ('a, 'c) Handshake.t
+
+    val transform
+      :  (clock:Signal.t
+          -> clear:Signal.t
+          -> Scope.t
+          -> Signal.t Source.t
+          -> Signal.t Dest.t
+          -> Signal.t Source.t * Signal.t Dest.t)
+      -> Transform_constructor.t
+
+    val run
+      :  t
+      -> Signal.t Source.t
+      -> Signal.t Dest.t
+      -> Signal.t Source.t * Signal.t Dest.t
+  end
+
   (** When placed between two components which produce/consume an AXI stream, this module
-      ensures that every output signal is registerd. It fully supports the
+      ensures that every output signal is registered. It fully supports the
       [tvalid]/[tready] handshake protocol. *)
   module Datapath_register : sig
     module IO : sig
@@ -98,11 +130,8 @@ module type S = sig
 
     val handshake_simple
       :  ?instance_name:string
-      -> n:int
-      -> clock:Signal.t
-      -> clear:Signal.t
-      -> Scope.t
-      -> (Signal.t Source.t, Signal.t Source.t) Handshake.t
+      -> ?n:int
+      -> Chain.Transform_constructor.t
   end
 end
 
