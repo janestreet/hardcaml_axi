@@ -79,12 +79,12 @@ struct
                   i.axi_slave.rvalid
                   [ int_slave.read_data <-- i.axi_slave.rdata
                   ; int_slave.read_ready <--. 1
-                  ; Master_to_slave.(Of_always.assign axi_master (Of_signal.of_int 0))
+                  ; Master_to_slave.(Of_always.assign axi_master (Of_signal.zero ()))
                   ]
               ; when_
                   (int_slave.read_ready.value &: i.int_master.read_valid)
                   [ Internal_bus.Slave_to_master.(
-                      Of_always.assign int_slave (Of_signal.of_int 0))
+                      Of_always.assign int_slave (Of_signal.zero ()))
                   ; sm.set_next Idle
                   ]
               ] )
@@ -92,12 +92,12 @@ struct
             , [ when_
                   i.axi_slave.bvalid
                   [ int_slave.write_ready <--. 1
-                  ; Master_to_slave.(Of_always.assign axi_master (Of_signal.of_int 0))
+                  ; Master_to_slave.(Of_always.assign axi_master (Of_signal.zero ()))
                   ]
               ; when_
                   (int_slave.write_ready.value &: i.int_master.write_valid)
                   [ Internal_bus.Slave_to_master.(
-                      Of_always.assign int_slave (Of_signal.of_int 0))
+                      Of_always.assign int_slave (Of_signal.zero ()))
                   ; sm.set_next Idle
                   ]
               ] )
