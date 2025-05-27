@@ -64,20 +64,20 @@ struct
               [ when_
                   o.master_dn.read_valid.value
                   [ o.slave_up.read_data <--. -1; o.slave_up.read_ready <-- vdd ]
-              ; Master_to_slave.(Of_always.assign o.master_dn (Of_signal.of_int 0))
+              ; Master_to_slave.(Of_always.assign o.master_dn (Of_signal.zero ()))
               ; sm.set_next Timed_out
               ]
           ])
         |> proc
       in
       compile
-        [ Slave_to_master.(Of_always.assign o.slave_up (Of_signal.of_int 0))
+        [ Slave_to_master.(Of_always.assign o.slave_up (Of_signal.zero ()))
         ; (* The _first signals don't wait for ready before de-asserting. *)
           o.master_dn.read_first <-- gnd
         ; o.master_dn.write_first <-- gnd
         ; sm.switch
             [ ( Idle
-              , [ Master_to_slave.(Of_always.assign o.master_dn (Of_signal.of_int 0))
+              , [ Master_to_slave.(Of_always.assign o.master_dn (Of_signal.zero ()))
                 ; timeout_count <--. 0
                 ; if_
                     i.master_up.write_valid
@@ -109,7 +109,7 @@ struct
                 ; when_
                     i.slave_dn.write_ready
                     [ sm.set_next Idle
-                    ; Master_to_slave.(Of_always.assign o.master_dn (Of_signal.of_int 0))
+                    ; Master_to_slave.(Of_always.assign o.master_dn (Of_signal.zero ()))
                     ]
                 ; maybe_timeout
                 ] )
@@ -119,7 +119,7 @@ struct
                     [ o.slave_up.read_data <-- i.slave_dn.read_data
                     ; (* Guard against case that upstream lowers its read valid mid-handshake for whatever reason. *)
                       when_ i.master_up.read_valid [ o.slave_up.read_ready <-- vdd ]
-                    ; Master_to_slave.(Of_always.assign o.master_dn (Of_signal.of_int 0))
+                    ; Master_to_slave.(Of_always.assign o.master_dn (Of_signal.zero ()))
                     ; sm.set_next Read_up
                     ]
                 ; maybe_timeout
