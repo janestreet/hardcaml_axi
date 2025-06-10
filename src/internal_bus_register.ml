@@ -49,7 +49,7 @@ struct
       let slave_up_write_ready =
         if supports_wready
         then Variable.reg reg_spec ~width:1
-        else Variable.wire ~default:gnd
+        else Variable.wire ~default:gnd ()
       in
       let%hw_var timeout_count =
         Variable.reg
