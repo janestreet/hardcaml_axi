@@ -10,7 +10,7 @@ module Packed_array (X : sig
   end) =
 struct
   module T = struct
-    type 'a t = 'a array [@@deriving sexp_of]
+    type 'a t = 'a array [@@deriving equal ~localize, sexp_of]
 
     let word_size = 32
     let num_words = (X.sum_of_port_widths + word_size - 1) / word_size
@@ -86,7 +86,9 @@ struct
       assert (width > 0 && offset + width < Int.num_bits);
       (* compute the piece from [v] that we will insert into [orig] *)
       let width_mask =
-        if width = I.num_bits then I.minus_one else I.((one lsl width) - one)
+        if width = I.(num_bits |> to_int_exn)
+        then I.minus_one
+        else I.((one lsl width) - one)
       in
       let v_mask = I.((v land width_mask) lsl offset |> to_int_exn) in
       (* compute the mask to unset the (width, offset) region of [orig] *)
@@ -102,7 +104,7 @@ struct
   end
 
   module Extract_field_as (I : Int.S) = struct
-    let () = assert (I.num_bits >= 32)
+    let () = assert (I.(num_bits |> to_int_exn) >= 32)
 
     open Set_in (I)
 
@@ -142,21 +144,25 @@ struct
     ;;
 
     let extract (offset, width) packed =
-      if width > I.num_bits
+      if width > I.(num_bits |> to_int_exn)
       then
         raise_s
           [%message
-            "Cannot extract field as int -  too wide" (width : int) (I.num_bits : int)];
-      let mask = if width = I.num_bits then I.minus_one else I.((one lsl width) - one) in
+            "Cannot extract field as int -  too wide" (width : int) (I.num_bits : I.t)];
+      let mask =
+        if width = I.(num_bits |> to_int_exn)
+        then I.minus_one
+        else I.((one lsl width) - one)
+      in
       let out_word = loop_extract (offset, width) (0, I.zero) packed in
       I.(out_word land mask)
     ;;
 
     let set (offset, width) packed set_word =
-      if width > I.num_bits
+      if width > I.(num_bits |> to_int_exn)
       then
         raise_s
-          [%message "Cannot set field as int - too wide" (width : int) (I.num_bits : int)];
+          [%message "Cannot set field as int - too wide" (width : int) (I.num_bits : I.t)];
       loop_set (offset, width) (0, set_word) packed
     ;;
   end
@@ -417,7 +423,7 @@ struct
         ; master : 'a Master_to_slave.t
         ; read_values : 'a Read.t
         }
-      [@@deriving hardcaml]
+      [@@deriving hardcaml ~rtlmangle:false]
     end
 
     module O = struct
@@ -426,7 +432,7 @@ struct
         ; write_values : 'a Write_with_valid.t
         ; read_enable : 'a Read_enable.t
         }
-      [@@deriving hardcaml]
+      [@@deriving hardcaml ~rtlmangle:false]
     end
 
     let write_addresses =

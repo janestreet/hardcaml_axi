@@ -13,7 +13,7 @@ struct
       | Idle
       | Write
       | Read
-    [@@deriving compare, enumerate, sexp_of, variants]
+    [@@deriving compare ~localize, enumerate, sexp_of, variants]
   end
 
   module I = struct
@@ -23,7 +23,7 @@ struct
       ; int_master : 'a Internal_bus.Master_to_slave.t
       ; axi_slave : 'a Slave_to_master.t
       }
-    [@@deriving hardcaml]
+    [@@deriving hardcaml ~rtlmangle:false]
   end
 
   module O = struct
@@ -31,7 +31,7 @@ struct
       { int_slave : 'a Internal_bus.Slave_to_master.t
       ; axi_master : 'a Master_to_slave.t
       }
-    [@@deriving hardcaml]
+    [@@deriving hardcaml ~rtlmangle:false]
   end
 
   let create _scope (i : _ I.t) =

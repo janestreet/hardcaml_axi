@@ -23,7 +23,7 @@ struct
       ; slave_dn : 'a Slave.t [@rtlprefix "slave_dn$"]
       ; master_up : 'a Master.t [@rtlprefix "master_up$"]
       }
-    [@@deriving hardcaml]
+    [@@deriving hardcaml ~rtlmangle:false]
   end
 
   module O = struct
@@ -31,7 +31,7 @@ struct
       { slave_up : 'a Slave.t [@rtlprefix "slave_up$"]
       ; master_dn : 'a Master.t [@rtlprefix "master_dn$"]
       }
-    [@@deriving hardcaml]
+    [@@deriving hardcaml ~rtlmangle:false]
   end
 
   module Pipeline_stage = struct

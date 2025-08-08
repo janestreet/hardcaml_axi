@@ -10,7 +10,7 @@ module Address_space : sig
     { address : int (** Base address of space *)
     ; size : int (** Size of address space *)
     }
-  [@@deriving compare, hash, sexp_of]
+  [@@deriving compare ~localize, hash, sexp_of]
 
   include Comparable.S with type t := t
 end
