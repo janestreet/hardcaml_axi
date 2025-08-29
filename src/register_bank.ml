@@ -360,7 +360,9 @@ struct
             else None
           in
           { With_valid.valid = reg reg_spec e
-          ; value = reg reg_spec ?clear ?clear_to ~enable:e d
+          ; value =
+              reg reg_spec ?clear ?clear_to ~enable:e d
+              |> Fn.flip add_attribute (Rtl_attribute.Vivado.extract_enable false)
           })
       in
       let slave =

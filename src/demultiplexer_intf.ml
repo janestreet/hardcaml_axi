@@ -3,7 +3,8 @@ open Hardcaml
 
 (** A [Demultiplexer] connects one master to many slaves. {!Demultiplexer.create} takes
     the master outputs and slave outputs and creates a demultiplexer circuit and returns
-    the outputs of the demultiplexer.
+    the outputs of the demultiplexer. It does not prevent switching slaves during a
+    transaction initiated by the master.
 
     Each slave space is of size [1 << address_offset] bytes. Indiviual slaves are accessed
     using [slave_address_bits] bits where
@@ -45,6 +46,9 @@ module type S = sig
 
   val create
     :  ?reg_spec:Signal.Reg_spec.t
+    -> ?check_address_out_of_range:bool
+         (** For timing, skip checking the top bits of the input address indicating it's
+             out of range of any slave. *)
     -> Scope.t
     -> address_offset:int
     -> master:Signal.t Master_to_slave.t
