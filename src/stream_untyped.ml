@@ -9,7 +9,7 @@ module Source = struct
     ; tlast : 'a
     ; tuser : 'a
     }
-  [@@deriving hardcaml, compare]
+  [@@deriving hardcaml, compare ~localize]
 
   let get_valid (t : Signal.t t) = t.tvalid
   let set_valid t ~valid:tvalid = { t with tvalid }

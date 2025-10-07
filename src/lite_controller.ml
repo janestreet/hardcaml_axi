@@ -39,7 +39,7 @@ module Make (X : Master_slave_bus_config.S) = struct
       ; m_ibus : 'a Ibus.Master_to_slave.t [@rtlprefix "m_ibus$"]
       ; s_axi : 'a Lite.Slave_to_master.t [@rtlprefix "s_axi$"]
       }
-    [@@deriving hardcaml]
+    [@@deriving hardcaml ~rtlmangle:false]
   end
 
   module O = struct
@@ -47,7 +47,7 @@ module Make (X : Master_slave_bus_config.S) = struct
       { s_ibus : 'a Ibus.Slave_to_master.t [@rtlprefix "s_ibus$"]
       ; m_axi : 'a Lite.Master_to_slave.t [@rtlprefix "m_axi$"]
       }
-    [@@deriving hardcaml]
+    [@@deriving hardcaml ~rtlmangle:false]
   end
 
   module State = struct
@@ -55,7 +55,7 @@ module Make (X : Master_slave_bus_config.S) = struct
       | Idle
       | Reading
       | Writing
-    [@@deriving compare, enumerate, sexp_of]
+    [@@deriving compare ~localize, enumerate, sexp_of]
   end
 
   let create scope { I.clock; clear; m_ibus; s_axi } : _ O.t =

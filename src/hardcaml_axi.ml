@@ -21,12 +21,13 @@ module type Stream_config = Stream.Config
 
 module Address_space_decoder = Address_space_decoder
 module Axi4_xilinx = Axi4_xilinx
+module C_register_interface = C_register_interface
 module Internal_bus = Internal_bus
 module Lite = Lite
 module Lite_controller = Lite_controller
 module Lite_ports = Lite_ports
-module Stream = Stream
 module Register_bank = Register_bank
 module Register_mode = Register_mode
+module Safe_arbiter = Safe_arbiter
 module Slave_with_data = Slave_with_data
-module C_register_interface = C_register_interface
+module Stream = Stream

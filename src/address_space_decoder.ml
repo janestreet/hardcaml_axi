@@ -7,7 +7,7 @@ module Address_space = struct
       { address : int
       ; size : int
       }
-    [@@deriving compare, hash, sexp_of]
+    [@@deriving compare ~localize, hash, sexp_of]
   end
 
   include T

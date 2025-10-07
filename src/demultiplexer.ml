@@ -30,6 +30,7 @@ struct
 
     let create
       ?reg_spec
+      ?(check_address_out_of_range = true)
       _scope
       ~address_offset
       ~(master : Signal.t Master_to_slave.t)
@@ -45,31 +46,30 @@ struct
       in
       let address_out_of_range =
         let top_bits = address_offset + address_bits in
-        if width address <= top_bits
+        if width address <= top_bits || not check_address_out_of_range
         then gnd
         else drop_bottom address ~width:top_bits <>:. 0
       in
       (* mux slave to master interfaces *)
       let slave = mux_and_register_slaves ?reg_spec ~slave_index ~slaves () in
       let masters =
-        List.map
-          (bits_lsb
-             ((match slave_index with
-               | None -> vdd
-               | Some slave_index -> binary_to_onehot slave_index)
-              &: ~:(repeat address_out_of_range ~count:(1 lsl address_bits))))
-          ~f:(fun en ->
-            { Master_to_slave.write_valid = master.write_valid &: en
-            ; write_first = master.write_first &: en
-            ; read_valid = master.read_valid &: en
-            ; read_first = master.read_first &: en
-            ; address =
-                uresize
-                  (sel_bottom master.address ~width:address_offset)
-                  ~width:Master_to_slave.addr_bits
-            ; write_data = master.write_data
-            ; write_byte_en = master.write_byte_en
-            })
+        (match slave_index with
+         | None -> vdd
+         | Some slave_index -> binary_to_onehot slave_index)
+        &: ~:(repeat address_out_of_range ~count:(1 lsl address_bits))
+        |> bits_lsb
+        |> List.map ~f:(fun en ->
+          { Master_to_slave.write_valid = master.write_valid &: en
+          ; write_first = master.write_first &: en
+          ; read_valid = master.read_valid &: en
+          ; read_first = master.read_first &: en
+          ; address =
+              uresize
+                (sel_bottom master.address ~width:address_offset)
+                ~width:Master_to_slave.addr_bits
+          ; write_data = master.write_data
+          ; write_byte_en = master.write_byte_en
+          })
       in
       (* We create [ceil_pow2 number_of_slaves] masters above by mapping over the onehot
          representation of the [slave_index]. This ensures there are equal numbers of

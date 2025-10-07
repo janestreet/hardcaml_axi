@@ -21,7 +21,7 @@ module Make (X : Config) = struct
       ; tlast : 'a
       ; tuser : 'a [@bits X.user_bits]
       }
-    [@@deriving hardcaml, compare]
+    [@@deriving hardcaml, compare ~localize]
 
     let get_valid (t : Signal.t t) = t.tvalid
     let set_valid t ~valid:tvalid = { t with tvalid }
@@ -35,6 +35,14 @@ module Make (X : Config) = struct
     let to_untyped { tvalid; tdata; tkeep; tstrb; tlast; tuser } =
       { Stream_untyped.Source.tvalid; tdata; tkeep; tstrb; tlast; tuser }
     ;;
+
+    module Clocked = struct
+      let of_untyped { Source_untyped.tvalid; tdata; tkeep; tstrb; tlast; tuser } =
+        let x = { tvalid; tdata; tkeep; tstrb; tlast; tuser } in
+        Of_clocked_signal.assert_widths x;
+        x
+      ;;
+    end
   end
 
   let add_properties
@@ -121,7 +129,7 @@ module Make (X : Config) = struct
           { source : 'a Source.t
           ; dest : 'a Dest.t
           }
-        [@@deriving hardcaml]
+        [@@deriving hardcaml ~rtlmangle:false]
       end
 
       module I = struct
@@ -130,12 +138,13 @@ module Make (X : Config) = struct
           ; clear : 'a
           ; i : 'a IO.t [@rtlprefix "i_"]
           }
-        [@@deriving hardcaml]
+        [@@deriving hardcaml ~rtlmangle:false]
       end
 
-      let create_io spec ({ source; dest } : _ IO.t) =
+      let create_io ?attributes spec ({ source; dest } : _ IO.t) =
         let base_o =
           Datapath_register_base.create_io
+            ?attributes
             spec
             { data = source; valid = source.tvalid; ready = dest.tready }
         in
@@ -144,18 +153,18 @@ module Make (X : Config) = struct
         }
       ;;
 
-      let create _scope (i : _ I.t) =
+      let create ?attributes _scope (i : _ I.t) =
         let spec = Signal.Reg_spec.create () ~clock:i.clock ~clear:i.clear in
-        create_io spec i.i
+        create_io ?attributes spec i.i
       ;;
 
-      let hierarchical ?instance scope i =
+      let hierarchical ?instance ?attributes scope i =
         let module Scoped = Hierarchy.In_scope (I) (IO) in
         Scoped.hierarchical
           ~scope
           ~name:("axi_datapath_reg_" ^ Int.to_string X.data_bits)
           ?instance
-          create
+          (create ?attributes)
           i
       ;;
     end

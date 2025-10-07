@@ -14,7 +14,7 @@ struct
         ; slave_dn : 'a Slave_to_master.t [@rtlprefix "slave_dn$"]
         ; master_up : 'a Master_to_slave.t [@rtlprefix "master_up$"]
         }
-      [@@deriving hardcaml]
+      [@@deriving hardcaml ~rtlmangle:false]
     end
 
     module O = struct
@@ -23,7 +23,7 @@ struct
         ; master_dn : 'a Master_to_slave.t [@rtlprefix "master_dn$"]
         ; timeout_cnt : 'a [@bits 32]
         }
-      [@@deriving hardcaml]
+      [@@deriving hardcaml ~rtlmangle:false]
     end
 
     module State = struct
@@ -33,7 +33,7 @@ struct
         | Read_dn (* Sending the read downstream *)
         | Read_up (* Returning read data upstream *)
         | Timed_out
-      [@@deriving enumerate, compare, sexp_of]
+      [@@deriving enumerate, compare ~localize, sexp_of]
     end
 
     let create ?timeout ~supports_wready scope (i : _ I.t) =
@@ -49,7 +49,7 @@ struct
       let slave_up_write_ready =
         if supports_wready
         then Variable.reg reg_spec ~width:1
-        else Variable.wire ~default:gnd
+        else Variable.wire ~default:gnd ()
       in
       let%hw_var timeout_count =
         Variable.reg

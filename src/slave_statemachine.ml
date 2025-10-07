@@ -17,7 +17,7 @@ struct
       | Wait_for_axi_write_done
       | Wait_for_internal_read_done
       | Wait_for_axi_read_done
-    [@@deriving compare, enumerate, sexp_of, variants]
+    [@@deriving compare ~localize, enumerate, sexp_of, variants]
 
     let to_string t = t |> sexp_of_t |> Sexp.to_string_hum
 
@@ -38,7 +38,7 @@ struct
       ; axi_master : 'a Master_to_slave.t
       ; int_slave : 'a Internal_bus.Slave_to_master.t
       }
-    [@@deriving hardcaml]
+    [@@deriving hardcaml ~rtlmangle:false]
   end
 
   module O = struct
@@ -46,7 +46,7 @@ struct
       { axi_slave : 'a Slave_to_master.t
       ; int_master : 'a Internal_bus.Master_to_slave.t
       }
-    [@@deriving hardcaml]
+    [@@deriving hardcaml ~rtlmangle:false]
   end
 
   let create _scope (i : _ I.t) =

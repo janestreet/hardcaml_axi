@@ -98,53 +98,63 @@ module type S = sig
   end
 end
 
+(** Packed arrays are a flattened version of [X.t] represented as an array of 32 bit
+    vectors.
+
+    They may be used as fields within a register interface to encode larger or grouped
+    values. *)
+module Packed_array = struct
+  module M (X : Interface.S) = struct
+    module type S = sig
+      include Interface.S with type 'a t = 'a array
+
+      val to_packed_array : (module Comb.S with type t = 'a) -> 'a X.t -> 'a t
+
+      val to_packed_array_latch_on_read
+        :  read_latency:int
+        -> Signal.Reg_spec.t
+        -> Signal.t X.t
+        -> Signal.t t
+        -> Signal.t t
+
+      val of_packed_array : (module Comb.S with type t = 'a) -> 'a t -> 'a X.t
+
+      val of_packed_array_with_valid
+        :  (module Comb.S with type t = 'a)
+        -> 'a With_valid.t t
+        -> 'a With_valid.t X.t
+
+      (* Extract fields *)
+      val extract_field_as_int : (int t -> int) X.t
+      val extract_field_as_int64 : (int t -> int64) X.t
+      val extract_field_as_bytes : (int t -> Bytes.t -> unit) X.t
+      val extract_field_as_string : (int t -> String.t) X.t
+
+      (* Set fields *)
+      val set_field_as_int : (int t -> int -> unit) X.t
+      val set_field_as_int64 : (int t -> int64 -> unit) X.t
+      val set_field_as_bytes : (int t -> Bytes.t -> unit) X.t
+      val set_field_as_string : (int t -> String.t -> unit) X.t
+      val hold : Register_mode.t t
+
+      (* Specialized conversions for ints *)
+      val of_packed_int_array : int t -> int X.t
+      val to_packed_int_array : int X.t -> int t
+    end
+  end
+end
+
 module type Register_bank = sig
   module type S = S
 
-  (** Packed arrays are a flattened version of [X.t] represented as an array of 32 bit
-      vectors.
+  module Packed_array : sig
+    module M = Packed_array.M
 
-      They may be used as fields within a register interface to encode larger or grouped
-      values. *)
-  module Packed_array (X : sig
-      include Interface.S
+    module Make (X : sig
+        include Interface.S
 
-      val name : string
-    end) : sig
-    include Interface.S with type 'a t = 'a array
-
-    val to_packed_array : (module Comb.S with type t = 'a) -> 'a X.t -> 'a t
-
-    val to_packed_array_latch_on_read
-      :  read_latency:int
-      -> Signal.Reg_spec.t
-      -> Signal.t X.t
-      -> Signal.t t
-      -> Signal.t t
-
-    val of_packed_array : (module Comb.S with type t = 'a) -> 'a t -> 'a X.t
-
-    val of_packed_array_with_valid
-      :  (module Comb.S with type t = 'a)
-      -> 'a With_valid.t t
-      -> 'a With_valid.t X.t
-
-    (* Extract fields *)
-    val extract_field_as_int : (int t -> int) X.t
-    val extract_field_as_int64 : (int t -> int64) X.t
-    val extract_field_as_bytes : (int t -> Bytes.t -> unit) X.t
-    val extract_field_as_string : (int t -> String.t) X.t
-
-    (* Set fields *)
-    val set_field_as_int : (int t -> int -> unit) X.t
-    val set_field_as_int64 : (int t -> int64 -> unit) X.t
-    val set_field_as_bytes : (int t -> Bytes.t -> unit) X.t
-    val set_field_as_string : (int t -> String.t -> unit) X.t
-    val hold : Register_mode.t t
-
-    (* Specialized conversions for ints *)
-    val of_packed_int_array : int t -> int X.t
-    val to_packed_int_array : int X.t -> int t
+        val name : string
+      end) : M(X).S
   end
 
   module Make

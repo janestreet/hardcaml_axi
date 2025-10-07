@@ -17,12 +17,16 @@ module type Source = sig
     ; tlast : 'a (** High on last word in packet. *)
     ; tuser : 'a (** User specified signalling. *)
     }
-  [@@deriving hardcaml, compare]
+  [@@deriving hardcaml, compare ~localize]
 
   val get_valid : Signal.t t -> Signal.t
   val set_valid : Signal.t t -> valid:Signal.t -> Signal.t t
   val of_untyped : Signal.t Stream_untyped.Source.t -> Signal.t t
   val to_untyped : 'a t -> 'a Stream_untyped.Source.t
+
+  module Clocked : sig
+    val of_untyped : Clocked_signal.t Stream_untyped.Source.t -> Clocked_signal.t t
+  end
 end
 
 module type Dest = sig
@@ -102,10 +106,7 @@ module type S = sig
       [@@deriving hardcaml]
     end
 
-    val create_io : Signal.Reg_spec.t -> Signal.t IO.t -> Signal.t IO.t
-    val create : Scope.t -> Signal.t I.t -> Signal.t IO.t
-    val hierarchical : ?instance:string -> Scope.t -> Signal.t I.t -> Signal.t IO.t
-
+    include Hardcaml_circuits.Datapath_register.M_creates(IO)(I).S
     module Pipeline_stage_descr = Pipeline_stage_descr
 
     (** Instantiates a chain of [n] [Datapath_register] components and wire up the
