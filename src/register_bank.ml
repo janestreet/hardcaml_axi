@@ -281,6 +281,10 @@ module Packed_array = struct
       X.map extract_field_as_int ~f:(fun extract_fn -> extract_fn t)
     ;;
 
+    let of_packed_int_array_to_int64 t =
+      X.map extract_field_as_int64 ~f:(fun extract_fn -> extract_fn t)
+    ;;
+
     let to_packed_int_array unpacked =
       let packed = Array.create ~len:num_words 0 in
       X.iter2 set_field_as_int unpacked ~f:(fun set_fn field -> set_fn packed field);
@@ -454,10 +458,17 @@ struct
       let reg_spec = Reg_spec.create ~clock:i.clock ~clear:i.clear () in
       let write_modes = Write.to_list write_modes in
       let read_values =
-        Read.to_list i.read_values
-        |> List.map ~f:(fun s ->
+        Read.zip Read.port_names_and_widths i.read_values
+        |> Read.to_list
+        |> List.map ~f:(fun ((name, intf_width), s) ->
           if Signal.width s > 32
-          then raise_s [%message "register width > 32 bit"]
+          then
+            raise_s
+              [%message
+                "register width > 32 bit"
+                  (name : string)
+                  (Signal.width s : int)
+                  (intf_width : int)]
           else Signal.uresize s ~width:32)
       in
       let { Slave_with_data.slave
@@ -477,9 +488,11 @@ struct
           Write.to_list Write.port_names
           |> List.map2_exn write_values ~f:(fun s n -> n, s)
         in
-        Write.map Write.port_names_and_widths ~f:(fun (n, b) ->
+        Write.map Write.port_names_and_widths ~f:(fun (n, width) ->
+          if width > 32
+          then raise_s [%message "write register width >32b" (n : string) (width : int)];
           let { With_valid.valid; value } = List.Assoc.find_exn t n ~equal:String.equal in
-          { With_valid.valid; value = value.Signal.:[b - 1, 0] })
+          { With_valid.valid; value = value.Signal.:[width - 1, 0] })
       in
       let read_enable =
         let t = List.zip_exn (Read.to_list Read.port_names) read_enables in

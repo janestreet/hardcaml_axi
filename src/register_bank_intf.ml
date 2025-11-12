@@ -139,6 +139,7 @@ module Packed_array = struct
 
       (* Specialized conversions for ints *)
       val of_packed_int_array : int t -> int X.t
+      val of_packed_int_array_to_int64 : int t -> int64 X.t
       val to_packed_int_array : int X.t -> int t
     end
   end

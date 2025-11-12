@@ -36,7 +36,14 @@ struct
       [@@deriving enumerate, compare ~localize, sexp_of]
     end
 
-    let create ?timeout ~supports_wready scope (i : _ I.t) =
+    module Timeout = struct
+      type t =
+        { count : int
+        ; return_value : int32
+        }
+    end
+
+    let create ?(timeout : Timeout.t option) ~supports_wready scope (i : _ I.t) =
       let ( -- ) = Scope.naming scope in
       let reg_spec = Reg_spec.create ~clock:i.clock ~clear:i.clear () in
       let open Always in
@@ -54,16 +61,20 @@ struct
       let%hw_var timeout_count =
         Variable.reg
           reg_spec
-          ~width:(num_bits_to_represent (Option.value timeout ~default:1))
+          ~width:
+            (num_bits_to_represent
+               (Option.value_map timeout ~f:(fun t -> t.count) ~default:1))
       in
       let maybe_timeout =
         Option.value_map timeout ~default:[] ~f:(fun timeout ->
           [ timeout_count <-- timeout_count.value +:. 1
           ; when_
-              (timeout_count.value ==:. timeout)
+              (timeout_count.value ==:. timeout.count)
               [ when_
                   o.master_dn.read_valid.value
-                  [ o.slave_up.read_data <--. -1; o.slave_up.read_ready <-- vdd ]
+                  [ o.slave_up.read_data <-- of_int32_trunc ~width:32 timeout.return_value
+                  ; o.slave_up.read_ready <-- vdd
+                  ]
               ; Master_to_slave.(Of_always.assign o.master_dn (Of_signal.zero ()))
               ; sm.set_next Timed_out
               ]
@@ -150,7 +161,7 @@ struct
     module Config = struct
       type t =
         { supports_wready : bool
-        ; timeout : int option
+        ; timeout : Timeout.t option
         ; timeout_cnt : Signal.t option ref
         }
     end
