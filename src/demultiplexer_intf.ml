@@ -18,6 +18,7 @@ open Hardcaml
     [address_offset] to [address_offset + slave_address_bits - 1].
 
     For example, if [demux] was created with two slaves and [address_offset] equal to
+
     [10], then in order to write to address [0xcd] of the first slave, you would set the
     address as follows:
 

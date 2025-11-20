@@ -104,44 +104,44 @@ end
     They may be used as fields within a register interface to encode larger or grouped
     values. *)
 module Packed_array = struct
-  module M (X : Interface.S) = struct
-    module type S = sig
-      include Interface.S with type 'a t = 'a array
+  module type S = sig
+    type 'a unpacked
 
-      val to_packed_array : (module Comb.S with type t = 'a) -> 'a X.t -> 'a t
+    include Interface.S with type 'a t = 'a array
 
-      val to_packed_array_latch_on_read
-        :  read_latency:int
-        -> Signal.Reg_spec.t
-        -> Signal.t X.t
-        -> Signal.t t
-        -> Signal.t t
+    val to_packed_array : (module Comb.S with type t = 'a) -> 'a unpacked -> 'a t
 
-      val of_packed_array : (module Comb.S with type t = 'a) -> 'a t -> 'a X.t
+    val to_packed_array_latch_on_read
+      :  read_latency:int
+      -> Signal.Reg_spec.t
+      -> Signal.t unpacked
+      -> Signal.t t
+      -> Signal.t t
 
-      val of_packed_array_with_valid
-        :  (module Comb.S with type t = 'a)
-        -> 'a With_valid.t t
-        -> 'a With_valid.t X.t
+    val of_packed_array : (module Comb.S with type t = 'a) -> 'a t -> 'a unpacked
 
-      (* Extract fields *)
-      val extract_field_as_int : (int t -> int) X.t
-      val extract_field_as_int64 : (int t -> int64) X.t
-      val extract_field_as_bytes : (int t -> Bytes.t -> unit) X.t
-      val extract_field_as_string : (int t -> String.t) X.t
+    val of_packed_array_with_valid
+      :  (module Comb.S with type t = 'a)
+      -> 'a With_valid.t t
+      -> 'a With_valid.t unpacked
 
-      (* Set fields *)
-      val set_field_as_int : (int t -> int -> unit) X.t
-      val set_field_as_int64 : (int t -> int64 -> unit) X.t
-      val set_field_as_bytes : (int t -> Bytes.t -> unit) X.t
-      val set_field_as_string : (int t -> String.t -> unit) X.t
-      val hold : Register_mode.t t
+    (* Extract fields *)
+    val extract_field_as_int : (int t -> int) unpacked
+    val extract_field_as_int64 : (int t -> int64) unpacked
+    val extract_field_as_bytes : (int t -> Bytes.t -> unit) unpacked
+    val extract_field_as_string : (int t -> String.t) unpacked
 
-      (* Specialized conversions for ints *)
-      val of_packed_int_array : int t -> int X.t
-      val of_packed_int_array_to_int64 : int t -> int64 X.t
-      val to_packed_int_array : int X.t -> int t
-    end
+    (* Set fields *)
+    val set_field_as_int : (int t -> int -> unit) unpacked
+    val set_field_as_int64 : (int t -> int64 -> unit) unpacked
+    val set_field_as_bytes : (int t -> Bytes.t -> unit) unpacked
+    val set_field_as_string : (int t -> String.t -> unit) unpacked
+    val hold : Register_mode.t t
+
+    (* Specialized conversions for ints *)
+    val of_packed_int_array : int t -> int unpacked
+    val of_packed_int_array_to_int64 : int t -> int64 unpacked
+    val to_packed_int_array : int unpacked -> int t
   end
 end
 
@@ -149,13 +149,31 @@ module type Register_bank = sig
   module type S = S
 
   module Packed_array : sig
-    module M = Packed_array.M
+    module type S = Packed_array.S
 
     module Make (X : sig
         include Interface.S
 
         val name : string
-      end) : M(X).S
+      end) : S with type 'a unpacked = 'a X.t
+
+    (** Convenient interface to create [module Packed = ...] using the [include functor]
+        extension. *)
+    module Include : sig
+      module type S = sig
+        type 'a unpacked
+
+        module Packed : S with type 'a unpacked = 'a unpacked
+      end
+
+      module type F = functor (X : Interface.S) -> S with type 'a unpacked := 'a X.t
+
+      module Make (X : sig
+          include Interface.S
+
+          val name : string
+        end) : S with type 'a unpacked := 'a X.t
+    end
   end
 
   module Make

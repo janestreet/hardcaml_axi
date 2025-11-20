@@ -49,9 +49,9 @@ struct
       let open Always in
       let sm = State_machine.create (module State) reg_spec in
       ignore (sm.current -- "STATE" : Signal.t);
-      (* Output is registered except for ready signals to upstream. This is to guard against
-         the case we see a valid write or read but it is de-asserted before the handshake is
-         finished. *)
+      (* Output is registered except for ready signals to upstream. This is to guard
+         against the case we see a valid write or read but it is de-asserted before the
+         handshake is finished. *)
       let o = O.Of_always.reg reg_spec in
       let slave_up_write_ready =
         if supports_wready
@@ -128,7 +128,8 @@ struct
               , [ when_
                     i.slave_dn.read_ready
                     [ o.slave_up.read_data <-- i.slave_dn.read_data
-                    ; (* Guard against case that upstream lowers its read valid mid-handshake for whatever reason. *)
+                    ; (* Guard against case that upstream lowers its read valid
+                         mid-handshake for whatever reason. *)
                       when_ i.master_up.read_valid [ o.slave_up.read_ready <-- vdd ]
                     ; Master_to_slave.(Of_always.assign o.master_dn (Of_signal.zero ()))
                     ; sm.set_next Read_up

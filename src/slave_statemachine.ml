@@ -76,7 +76,7 @@ struct
                  |<---| rdata
                  |<---| rresp
                  |<---| rvalid
-         v}
+       v}
     *)
     let reg_spec = Reg_spec.create ~clock:i.clock ~clear:i.clear () in
     let state = Always.State_machine.create (module State) reg_spec ~enable:vdd in
@@ -95,7 +95,7 @@ struct
         ; int_master.write_first <--. 0
         ; int_master.read_first <--. 0
         ; state.switch
-            [ (* wait for an AXI transaction to start.  In the initial state we immediately
+            [ (* wait for an AXI transaction to start. In the initial state we immediately
                  acknowledge write address/data transactions with no delay. *)
               ( Wait_transaction_start
               , [ axi_slave.awready <--. 1

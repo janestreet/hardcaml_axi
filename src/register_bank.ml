@@ -4,7 +4,7 @@ open Hardcaml
 module type S = Register_bank_intf.S
 
 module Packed_array = struct
-  module M = Register_bank_intf.Packed_array.M
+  module type S = Register_bank_intf.Packed_array.S
 
   module Make (X : sig
       include Interface.S
@@ -12,7 +12,9 @@ module Packed_array = struct
       val name : string
     end) =
   struct
-    module T = struct
+    type 'a unpacked = 'a X.t
+
+    module Pre = struct
       type 'a t = 'a array [@@deriving equal ~localize, compare ~localize, sexp_of]
 
       let word_size = 32
@@ -29,8 +31,8 @@ module Packed_array = struct
       let to_list = Array.to_list
     end
 
-    include T
-    include Interface.Make (T)
+    include Pre
+    include Interface.Make (Pre)
 
     let to_packed_array (type a) (module Comb : Comb.S with type t = a) (x : a X.t) =
       let module C = X.Make_comb (Comb) in
@@ -290,6 +292,25 @@ module Packed_array = struct
       X.iter2 set_field_as_int unpacked ~f:(fun set_fn field -> set_fn packed field);
       packed
     ;;
+  end
+
+  module Include = struct
+    module type S = sig
+      type 'a unpacked
+
+      module Packed : S with type 'a unpacked = 'a unpacked
+    end
+
+    module type F = functor (X : Interface.S) -> S with type 'a unpacked := 'a X.t
+
+    module Make (X : sig
+        include Interface.S
+
+        val name : string
+      end) =
+    struct
+      module Packed = Make (X)
+    end
   end
 end
 

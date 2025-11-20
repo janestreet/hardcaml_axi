@@ -76,9 +76,9 @@ module Make (X : Config) = struct
         scope
         "tlast remains until ready"
         (g (ap_tlast ==>: r ap_tready ap_tlast));
-      (* Generates one LTL property per bit to ensure that bit doesn't change when tvalid is
-         high until after we see a tready. Can't be just a single LTL property as that would
-         require 2^number_of_bits states *)
+      (* Generates one LTL property per bit to ensure that bit doesn't change when tvalid
+         is high until after we see a tready. Can't be just a single LTL property as that
+         would require 2^number_of_bits states *)
       List.concat [ [ ap_tlast ]; aps_tdata; aps_tkeep; aps_tstrb ]
       |> List.iter ~f:(fun ap ->
         let prop =

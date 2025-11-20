@@ -68,7 +68,7 @@ module Address_space_tree = struct
             List.partition_tf address_spaces ~f:(fun address_space ->
               address_space.address land (1 lsl bit) = 0)
           in
-          (* Is one half empty?  If so don't decode this bit *)
+          (* Is one half empty? If so don't decode this bit *)
           if List.is_empty zero
           then create (bit - 1) one
           else if List.is_empty one
