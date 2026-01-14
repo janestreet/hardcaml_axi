@@ -2,19 +2,18 @@
 
 module Mode : sig
   type t =
-    | Toggle_low (** Register toggles back to [0] after a write **)
-    | Toggle_high (** Register toggles back to all [1]'s after a write **)
-    | Hold (** Register holds its value after a write **)
+    | Toggle_low (** Register toggles back to [0] after a write *)
+    | Toggle_high (** Register toggles back to all [1]'s after a write *)
+    | Hold (** Register holds its value after a write *)
   [@@deriving sexp_of]
 end
 
 type t [@@deriving sexp_of]
 
-(** {2 Creation of write modes}
-    **)
+(** {2 Creation of write modes} *)
 
 (** Create a configuration for a write register. [internal_clear] allows the register to
-    be cleared by user logic. [clear_to] is the initial value of the register after claer. *)
+    be cleared by user logic. [clear_to] is the initial value of the register after clear. *)
 val create : ?internal_clear:bool -> ?clear_to:int -> Mode.t -> t
 
 (** Register holds it's value after a write. *)
