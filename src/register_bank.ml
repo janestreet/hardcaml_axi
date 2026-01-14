@@ -43,27 +43,35 @@ module Packed_array = struct
     ;;
 
     let to_packed_array_latch_on_read
-      ~read_latency
+      how_to_latch
       spec
       (x : Signal.t X.t)
-      (read_enables : Signal.t t)
+      ~(read_enable : Signal.t t)
       =
-      if read_latency < 0
-      then raise_s [%message "read_latency must be non-negative!" (read_latency : int)]
-      else if read_latency = 0
-      then (* we cannot latch with 0 latency *)
+      let open Signal in
+      match how_to_latch with
+      | `Latch_all ->
         to_packed_array (module Signal) x
-      else (
-        let registered_x =
-          X.map2 x (X.offsets ()) ~f:(fun v bit_offset ->
-            let base_address = bit_offset / word_size in
-            let enable = read_enables.(base_address) in
-            let latch_reg = Signal.reg spec ~enable v in
-            if read_latency > 1
-            then Signal.pipeline spec ~n:(read_latency - 1) latch_reg
-            else latch_reg)
-        in
-        to_packed_array (module Signal) registered_x)
+        |> Array.mapi ~f:(fun i d ->
+          (* The lowest index must be cut through for read latencies of 0 and latched for
+             nonzero read latencies. the upper indices are latched when the lowest index
+             is read. *)
+          let enable = read_enable.(0) in
+          if i = 0 then cut_through_reg spec ~enable d else reg spec ~enable d)
+      | `Latch_by_field ->
+        X.map3 x (X.offsets ()) X.port_widths ~f:(fun d bit_offset width ->
+          (* Similar to above, the bits of the field that are contained in the lowest
+             array index must be cut through for read latencies of 0, and latched for
+             nonzero read latencies. The remaining bits can be latched. *)
+          let base_address = bit_offset / word_size in
+          let lowest_index_bits = word_size - (bit_offset % word_size) in
+          let enable = read_enable.(base_address) in
+          if lowest_index_bits >= width
+          then cut_through_reg spec ~enable d
+          else (
+            let d_hi, d_lo = split_in_half_lsb ~lsbs:lowest_index_bits d in
+            reg spec ~enable d_hi @: cut_through_reg spec ~enable d_lo))
+        |> to_packed_array (module Signal)
     ;;
 
     let of_packed_array (type a) (module Comb : Comb.S with type t = a) (t : a t) : a X.t =
@@ -312,6 +320,30 @@ module Packed_array = struct
       module Packed = Make (X)
     end
   end
+
+  module Int64 = struct
+    module T = struct
+      let name = "int64"
+
+      include (val Types.scalar ~wave_format:Int ~name 64)
+    end
+
+    include T
+
+    (* Cannot use include functor here. *)
+    module Packed = Make (T)
+  end
+end
+
+module Make_read_enable (X : Interface.S) = struct
+  module T = struct
+    include X
+
+    let port_names_and_widths = map port_names ~f:(fun n -> "ren$" ^ n, 1)
+  end
+
+  include T
+  include Interface.Make (T)
 end
 
 module Make
@@ -435,17 +467,7 @@ struct
 
   module With_interface (Read : Interface.S) (Write : Interface.S) = struct
     module Write_with_valid = With_valid.Fields.Make (Write)
-
-    module Read_enable = struct
-      module T = struct
-        include Read
-
-        let port_names_and_widths = map port_names ~f:(fun n -> "ren$" ^ n, 1)
-      end
-
-      include T
-      include Interface.Make (T)
-    end
+    module Read_enable = Make_read_enable (Read)
 
     module I = struct
       type 'a t =

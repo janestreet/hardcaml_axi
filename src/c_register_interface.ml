@@ -18,7 +18,7 @@ module Make (Regs : Interface.S_with_ast) = struct
         } ->
         let flds =
           List.init length ~f:(fun j ->
-            rtlname ^ Int.to_string j, if j = 0 then doc else None)
+            rtlname ^ "_" ^ Int.to_string j, if j = 0 then doc else None)
         in
         flds
       | { Interface.Ast.Field.name = _

@@ -111,11 +111,20 @@ module Packed_array = struct
 
     val to_packed_array : (module Comb.S with type t = 'a) -> 'a unpacked -> 'a t
 
+    (** Latches array values on a read. This works for zero and non-zero latency reads.
+
+        If [`Latch_all] is passed, the latching occurs for the entire array when the
+        lowest index is read. This enables an atomic snapshot of the entire packed array
+        to be read.
+
+        If [`Latch_by_field] is passed, latching occurs on a per-field basis when a
+        field's lowest array index is read. This enables each field to be read atomically,
+        without reading the full packed array. *)
     val to_packed_array_latch_on_read
-      :  read_latency:int
+      :  [ `Latch_all | `Latch_by_field ]
       -> Signal.Reg_spec.t
       -> Signal.t unpacked
-      -> Signal.t t
+      -> read_enable:Signal.t t
       -> Signal.t t
 
     val of_packed_array : (module Comb.S with type t = 'a) -> 'a t -> 'a unpacked
@@ -148,6 +157,8 @@ end
 module type Register_bank = sig
   module type S = S
 
+  module Make_read_enable (X : Interface.S) : Interface.S with type 'a t = 'a X.t
+
   module Packed_array : sig
     module type S = Packed_array.S
 
@@ -174,6 +185,8 @@ module type Register_bank = sig
           val name : string
         end) : S with type 'a unpacked := 'a X.t
     end
+
+    module Int64 : Include.S with type 'a unpacked := 'a
   end
 
   module Make
