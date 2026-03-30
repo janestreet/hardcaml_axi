@@ -121,23 +121,19 @@ module Packed_array = struct
 
       open Set_in (I)
 
-      let rec loop f (offset, width) (out_offset, out_word) packed =
+      let rec loop f (offset, width) (out_offset, out_word) =
         let word = offset / 32 in
         let bit_offset = offset land 31 in
         let bits_left = 32 - bit_offset in
-        let out_word = f word bit_offset bits_left (out_offset, out_word) packed in
+        let out_word = f word bit_offset bits_left (out_offset, out_word) in
         if bits_left >= width
         then out_word
         else
-          loop
-            f
-            (offset + bits_left, width - bits_left)
-            (out_offset + bits_left, out_word)
-            packed
+          loop f (offset + bits_left, width - bits_left) (out_offset + bits_left, out_word)
       ;;
 
       let loop_set (offset, width) (out_offset, out_word) packed =
-        let f word bit_offset bits_left (set_offset, set_word) packed =
+        let f word bit_offset bits_left (set_offset, set_word) =
           packed.(word)
           <- set_in_int
                ~orig:packed.(word)
@@ -146,17 +142,18 @@ module Packed_array = struct
                ~v:I.(set_word lsr set_offset);
           set_word
         in
-        ignore (loop f (offset, width) (out_offset, out_word) packed : I.t)
+        ignore (loop f (offset, width) (out_offset, out_word) : I.t)
       ;;
 
-      let loop_extract =
-        let f word bit_offset _bits_left (out_offset, out_word) packed =
-          I.(out_word lor ((I.of_int_exn packed.(word) lsr bit_offset) lsl out_offset))
+      let loop_extract get =
+        let f word bit_offset _bits_left (out_offset, out_word) =
+          I.(
+            out_word lor ((I.of_int_exn (get ~index:word) lsr bit_offset) lsl out_offset))
         in
-        loop f
+        loop f [@nontail]
       ;;
 
-      let extract (offset, width) packed =
+      let read (offset, width) get =
         if width > I.(num_bits |> to_int_exn)
         then
           raise_s
@@ -167,7 +164,7 @@ module Packed_array = struct
           then I.minus_one
           else I.((one lsl width) - one)
         in
-        let out_word = loop_extract (offset, width) (0, I.zero) packed in
+        let out_word = loop_extract get (offset, width) (0, I.zero) in
         I.(out_word land mask)
       ;;
 
@@ -181,14 +178,30 @@ module Packed_array = struct
       ;;
     end
 
+    (* The extract_field_as_* functions are implemented using the read_field_as_*
+       functions and using [Array.get] as the getting function. *)
+    let convert_read_field_to_extract_field read_field unpacked =
+      read_field (fun ~index -> Array.get unpacked index) [@nontail]
+    ;;
+
     module E_int = Extract_field_as (Int)
 
-    let extract_field_as_int = X.map bit_positions ~f:E_int.extract
+    let read_field_as_int = X.map bit_positions ~f:E_int.read
+
+    let extract_field_as_int =
+      X.map read_field_as_int ~f:convert_read_field_to_extract_field
+    ;;
+
     let set_field_as_int = X.map bit_positions ~f:E_int.set
 
     module E_int64 = Extract_field_as (Int64)
 
-    let extract_field_as_int64 = X.map bit_positions ~f:E_int64.extract
+    let read_field_as_int64 = X.map bit_positions ~f:E_int64.read
+
+    let extract_field_as_int64 =
+      X.map read_field_as_int64 ~f:convert_read_field_to_extract_field
+    ;;
+
     let set_field_as_int64 = X.map bit_positions ~f:E_int64.set
 
     let set_field_as_bytes =
@@ -234,8 +247,8 @@ module Packed_array = struct
         loop (offset, width) (0, bytes) packed)
     ;;
 
-    let extract_field_as_bytes =
-      let rec loop (offset, width) b packed cur_byte =
+    let read_field_as_bytes =
+      let rec loop (offset, width) b get cur_byte =
         if width <= 0
         then ()
         else (
@@ -248,35 +261,45 @@ module Packed_array = struct
             (if start_word = end_word
              then
                (* byte is in one word; just pull it out *)
-               (packed.(start_word) lsr start_bit_offset) land cur_bitmask
+               (get ~index:start_word lsr start_bit_offset) land cur_bitmask
              else (
                assert (end_word = start_word + 1);
                let start_byte_bits = 32 - start_bit_offset in
                let start_byte_bitmask = (1 lsl start_byte_bits) - 1 in
                let start_piece =
-                 (packed.(start_word) lsr start_bit_offset) land start_byte_bitmask
+                 (get ~index:start_word lsr start_bit_offset) land start_byte_bitmask
                in
                let end_byte_bits = cur_width - start_byte_bits in
                let end_byte_bitmask = (1 lsl end_byte_bits) - 1 in
-               let end_piece = packed.(end_word) land end_byte_bitmask in
+               let end_piece = get ~index:end_word land end_byte_bitmask in
                (end_piece lsl start_byte_bits) lor start_piece))
             |> Char.of_int_exn
           in
           Bytes.set b cur_byte c;
-          loop (offset + 8, width - 8) b packed (cur_byte + 1))
+          loop (offset + 8, width - 8) b get (cur_byte + 1))
       in
-      X.map bit_positions ~f:(fun (offset, width) packed b ->
+      X.map bit_positions ~f:(fun (offset, width) get b ->
         assert (8 * Bytes.length b >= width);
-        loop (offset, width) b packed 0)
+        loop (offset, width) b get 0)
     ;;
 
-    let extract_field_as_string =
-      X.map2 X.port_widths extract_field_as_bytes ~f:(fun bit_width f ->
+    (* Cannot use [convert_read_field_to_extract_field] here becuase of [b]. *)
+    let extract_field_as_bytes =
+      X.map read_field_as_bytes ~f:(fun read unpacked b ->
+        read (fun ~index -> unpacked.(index)) b [@nontail])
+    ;;
+
+    let read_field_as_string =
+      X.map2 X.port_widths read_field_as_bytes ~f:(fun bit_width f ->
         let byte_width = Int.round_up ~to_multiple_of:8 bit_width / 8 in
         let b = Bytes.create byte_width in
         fun i ->
           f i b;
           Bytes.to_string b)
+    ;;
+
+    let extract_field_as_string =
+      X.map read_field_as_string ~f:convert_read_field_to_extract_field
     ;;
 
     let set_field_as_string =
@@ -288,15 +311,17 @@ module Packed_array = struct
     let hold = Array.init num_words ~f:(Fn.const Register_mode.hold)
 
     let of_packed_int_array t =
-      X.map extract_field_as_int ~f:(fun extract_fn -> extract_fn t)
+      X.map extract_field_as_int ~f:(fun extract_fn -> extract_fn t) [@nontail]
     ;;
 
     let of_packed_int_array_to_int64 t =
-      X.map extract_field_as_int64 ~f:(fun extract_fn -> extract_fn t)
+      X.map extract_field_as_int64 ~f:(fun extract_fn -> extract_fn t) [@nontail]
     ;;
 
+    let empty_packed_int_array () = Array.create ~len:num_words 0
+
     let to_packed_int_array unpacked =
-      let packed = Array.create ~len:num_words 0 in
+      let packed = empty_packed_int_array () in
       X.iter2 set_field_as_int unpacked ~f:(fun set_fn field -> set_fn packed field);
       packed
     ;;
