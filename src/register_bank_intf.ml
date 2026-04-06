@@ -135,22 +135,31 @@ module Packed_array = struct
       -> 'a With_valid.t unpacked
 
     (* Extract fields *)
-    val extract_field_as_int : (int t -> int) unpacked
-    val extract_field_as_int64 : (int t -> int64) unpacked
-    val extract_field_as_bytes : (int t -> Bytes.t -> unit) unpacked
-    val extract_field_as_string : (int t -> String.t) unpacked
+    val extract_field_as_int : (int t @ local -> int) unpacked
+    val extract_field_as_int64 : (int t @ local -> int64) unpacked
+    val extract_field_as_bytes : (int t @ local -> Bytes.t -> unit) unpacked
+    val extract_field_as_string : (int t @ local -> String.t) unpacked
 
     (* Set fields *)
-    val set_field_as_int : (int t -> int -> unit) unpacked
-    val set_field_as_int64 : (int t -> int64 -> unit) unpacked
-    val set_field_as_bytes : (int t -> Bytes.t -> unit) unpacked
-    val set_field_as_string : (int t -> String.t -> unit) unpacked
+    val set_field_as_int : (int t @ local -> int -> unit) unpacked
+    val set_field_as_int64 : (int t @ local -> int64 -> unit) unpacked
+    val set_field_as_bytes : (int t @ local -> Bytes.t -> unit) unpacked
+    val set_field_as_string : (int t @ local -> String.t -> unit) unpacked
     val hold : Register_mode.t t
+    val empty_packed_int_array : unit -> int t
 
     (* Specialized conversions for ints *)
-    val of_packed_int_array : int t -> int unpacked
-    val of_packed_int_array_to_int64 : int t -> int64 unpacked
+    val of_packed_int_array : int t @ local -> int unpacked
+    val of_packed_int_array_to_int64 : int t @ local -> int64 unpacked
     val to_packed_int_array : int unpacked -> int t
+
+    (* Read fields by providing a function which takes a packed array index and returns
+       the corresponding integer value. This is useful for getting individual fields of
+       [unpacked] without needing to read the full packed array. *)
+    val read_field_as_int : ((index:int -> int) @ local -> int) unpacked
+    val read_field_as_int64 : ((index:int -> int) @ local -> int64) unpacked
+    val read_field_as_bytes : ((index:int -> int) @ local -> Bytes.t -> unit) unpacked
+    val read_field_as_string : ((index:int -> int) @ local -> String.t) unpacked
   end
 end
 

@@ -137,8 +137,8 @@ module Make (Comb : Comb.S) = struct
     (* build the address space tree *)
     let tree = Address_space_tree.create ~address_bits address_spaces in
     let address_n = ~:address in
-    let address = to_array address in
-    let address_n = to_array address_n in
+    let address = For_array.bits_lsb address in
+    let address_n = For_array.bits_lsb address_n in
     (* Build the decoder. *)
     let rec build_decoder (tree : Address_space_tree.t) eqn decoded =
       match tree with
