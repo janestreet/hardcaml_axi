@@ -1,7 +1,6 @@
 open Base
 open Hardcaml
-
-module type S = Register_bank_intf.S
+include Register_bank_intf
 
 module Packed_array = struct
   module type S = Register_bank_intf.Packed_array.S
@@ -401,13 +400,9 @@ struct
           data
     ;;
 
-    type pipelined_read_depth =
-      { external_cycles : int
-      ; internal_mux_cycles : int
-      }
-
     let create
-      ?(pipelined_read_depth = { external_cycles = 0; internal_mux_cycles = 0 })
+      ?(pipelined_read_depth =
+        { Pipelined_read_depth.external_cycles = 0; internal_mux_cycles = 0 })
       reg_spec
       ~clear_write_values
       ~(master : _ Master_to_slave.t)
@@ -490,7 +485,15 @@ struct
     ;;
   end
 
-  module With_interface (Read : Interface.S) (Write : Interface.S) = struct
+  module With_interface_and_addrs (M : sig
+      module Read : Interface.S
+      module Write : Interface.S
+
+      val write_addresses : int Write.t
+      val read_addresses : int Read.t
+    end) =
+  struct
+    open M
     module Write_with_valid = With_valid.Fields.Make (Write)
     module Read_enable = Make_read_enable (Read)
 
@@ -514,15 +517,65 @@ struct
       [@@deriving hardcaml ~rtlmangle:false]
     end
 
-    let write_addresses =
-      Write.(scan port_names ~init:0 ~f:(fun addr _ -> addr + 1, addr * 4))
+    let write_addresses = write_addresses
+    let read_addresses = read_addresses
+
+    let validate_addresses () =
+      let validate addrs =
+        let addr_to_name = Hashtbl.create (module Int) in
+        List.iter addrs ~f:(fun (name, addr) ->
+          if addr < 0 || addr % 4 <> 0
+          then
+            raise_s
+              [%message
+                "Register address must be a multiple of 4 and non-negative"
+                  (name : string)
+                  (addr : int)];
+          match Hashtbl.add addr_to_name ~key:addr ~data:name with
+          | `Ok -> ()
+          | `Duplicate ->
+            let existing = Hashtbl.find_exn addr_to_name addr in
+            raise_s
+              [%message
+                "Duplicate register addresses"
+                  (addr : int)
+                  ~names:([ existing; name ] : string list)])
+      in
+      Read.zip Read.port_names read_addresses |> Read.to_list |> validate;
+      Write.zip Write.port_names write_addresses |> Write.to_list |> validate
     ;;
 
-    let read_addresses =
-      Read.(scan port_names ~init:0 ~f:(fun addr _ -> addr + 1, addr * 4))
+    (* Sort [items] by their [addresses], and pad with [pad]. The resulting list has one
+       entry per word in the address space (covering [0] up to the maximum address).
+
+       Returns the padded list, and a mapping of each register to its index in the padded
+       list, so we can remap the output from the register bank back to the original
+       interface. *)
+    let sort_and_pad ~pad ~addresses ~items =
+      let sorted =
+        List.zip_exn addresses items
+        |> List.mapi ~f:(fun idx (addr, item) -> idx, addr, item)
+        |> List.sort ~compare:(fun (_, addr0, _) (_, addr1, _) ->
+          Int.ascending addr0 addr1)
+      in
+      let padded =
+        let len =
+          match List.last sorted with
+          | None -> 0
+          | Some (_, max_addr, _) -> (max_addr / 4) + 1
+        in
+        Array.create ~len pad
+      in
+      let index_in_padded_list = Array.create ~len:(List.length sorted) 0 in
+      List.iter sorted ~f:(fun (original_index, addr, item) ->
+        let idx_in_padded_list = addr / 4 in
+        padded.(idx_in_padded_list) <- item;
+        index_in_padded_list.(original_index) <- idx_in_padded_list);
+      Array.to_list padded, index_in_padded_list
     ;;
 
     let create ?pipelined_read_depth _scope ~write_modes (i : _ I.t) =
+      validate_addresses ();
       let reg_spec = Reg_spec.create ~clock:i.clock ~clear:i.clear () in
       let write_modes = Write.to_list write_modes in
       let read_values =
@@ -539,6 +592,18 @@ struct
                   (intf_width : int)]
           else Signal.uresize s ~width:32)
       in
+      let read_values_padded, read_index_in_padded_list =
+        sort_and_pad
+          ~pad:(Signal.ones 32)
+          ~addresses:(Read.to_list read_addresses)
+          ~items:read_values
+      in
+      let write_modes_padded, write_index_in_padded_list =
+        sort_and_pad
+          ~pad:Register_mode.hold
+          ~addresses:(Write.to_list write_addresses)
+          ~items:write_modes
+      in
       let { Slave_with_data.slave
           ; data = { Without_interface.write_values; read_enables }
           }
@@ -547,23 +612,33 @@ struct
           ?pipelined_read_depth
           reg_spec
           ~master:i.master
-          ~write_modes
-          ~read_values
+          ~write_modes:write_modes_padded
+          ~read_values:read_values_padded
           ~clear_write_values:i.clear_write_values
       in
       let write_values =
-        let t =
-          Write.to_list Write.port_names
-          |> List.map2_exn write_values ~f:(fun s n -> n, s)
+        let write_values_array = Array.of_list write_values in
+        let pick =
+          let t =
+            Write.to_list Write.port_names
+            |> List.mapi ~f:(fun i name ->
+              name, write_values_array.(write_index_in_padded_list.(i)))
+          in
+          fun name -> List.Assoc.find_exn t name ~equal:String.equal
         in
         Write.map Write.port_names_and_widths ~f:(fun (n, width) ->
           if width > 32
           then raise_s [%message "write register width >32b" (n : string) (width : int)];
-          let { With_valid.valid; value } = List.Assoc.find_exn t n ~equal:String.equal in
+          let { With_valid.valid; value } = pick n in
           { With_valid.valid; value = value.Signal.:[width - 1, 0] })
       in
       let read_enable =
-        let t = List.zip_exn (Read.to_list Read.port_names) read_enables in
+        let read_enables_array = Array.of_list read_enables in
+        let t =
+          Read.to_list Read.port_names
+          |> List.mapi ~f:(fun i name ->
+            name, read_enables_array.(read_index_in_padded_list.(i)))
+        in
         Read.map Read.port_names ~f:(fun name ->
           List.Assoc.find_exn t name ~equal:String.equal)
       in
@@ -579,6 +654,20 @@ struct
         (create ?pipelined_read_depth ~write_modes)
     ;;
   end
+
+  module With_interface (Read : Interface.S) (Write : Interface.S) =
+  With_interface_and_addrs (struct
+      module Read = Read
+      module Write = Write
+
+      let write_addresses =
+        Write.(scan port_names ~init:0 ~f:(fun addr _ -> addr + 1, addr * 4))
+      ;;
+
+      let read_addresses =
+        Read.(scan port_names ~init:0 ~f:(fun addr _ -> addr + 1, addr * 4))
+      ;;
+    end)
 
   include Without_interface
 end
