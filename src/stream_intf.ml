@@ -3,6 +3,12 @@ open Hardcaml
 module Handshake = Hardcaml_handshake
 module Pipeline_stage_descr = Build_register_pipeline.Pipeline_stage_descr
 
+module type Config_expert = sig
+  val data_bits : int
+  val user_bits : int
+  val keep_bits : int
+end
+
 module type Config = sig
   val data_bits : int
   val user_bits : int
@@ -140,6 +146,10 @@ end
 module type Stream = sig
   module Pipeline_stage_descr = Pipeline_stage_descr
 
+  (** Config interface for AXI-Stream instantiations with user specified tkeep and tstrb
+      widths. *)
+  module type Config_expert = Config_expert
+
   (** Config interface for AXI-Stream instantiations. *)
   module type Config = Config
 
@@ -151,6 +161,10 @@ module type Stream = sig
 
   (** AXI Stream interfaces for instantiations. *)
   module type S = S
+
+  (** Instantiates an AXI Stream interface {!S} from the given config, allowing user
+      specified keep and tstrb bits. *)
+  module Make_expert (X : Config_expert) : S
 
   (** Instantiates an AXI Stream interface {!S} from the given config. *)
   module Make (X : Config) : S

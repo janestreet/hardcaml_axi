@@ -31,3 +31,4 @@ module Register_mode = Register_mode
 module Safe_arbiter = Safe_arbiter
 module Slave_with_data = Slave_with_data
 module Stream = Stream
+module Transaction_arbiter = Transaction_arbiter

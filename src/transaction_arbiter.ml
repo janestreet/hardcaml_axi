@@ -62,8 +62,7 @@ module Make (Config : Config.S) = struct
                         (finished_or_not_in_primary
                          &: ~:(start_transaction primary_source)
                             (* when racing, we have to stay with primary as dest has
-                               already propagated *)
-                        )
+                               already propagated *))
                         [ sm.set_next Secondary; secondary_first <-- vdd ]
                         [ sm.set_next Secondary_requested ]
                     ]

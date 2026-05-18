@@ -4,7 +4,7 @@ include Stream_intf
 module Source_untyped = Stream_untyped.Source
 module Dest_untyped = Stream_untyped.Dest
 
-module Make (X : Config) = struct
+module Make_expert (X : Config_expert) = struct
   module Dest = struct
     type 'a t = 'a Dest_untyped.t = { tready : 'a } [@@deriving hardcaml]
 
@@ -16,8 +16,8 @@ module Make (X : Config) = struct
     type 'a t = 'a Source_untyped.t =
       { tvalid : 'a
       ; tdata : 'a [@bits X.data_bits]
-      ; tkeep : 'a [@bits X.data_bits / 8]
-      ; tstrb : 'a [@bits X.data_bits / 8]
+      ; tkeep : 'a [@bits X.keep_bits]
+      ; tstrb : 'a [@bits X.keep_bits]
       ; tlast : 'a
       ; tuser : 'a [@bits X.user_bits]
       }
@@ -224,6 +224,12 @@ module Make (X : Config) = struct
     ;;
   end
 end
+
+module Make (Config : Config) = Make_expert (struct
+    include Config
+
+    let keep_bits = data_bits / 8
+  end)
 
 module type S_untyped =
   S with type 'a Source.t = 'a Source_untyped.t and type 'a Dest.t = 'a Dest_untyped.t
