@@ -88,6 +88,8 @@ struct
   ;;
 
   let pipeline_simple ?instance ~config ~n scope (i : _ I.t) =
+    if n < 0
+    then raise_s [%message "[pipeline_simple] cannot accept a negative value" (n : int)];
     let pipeline_stages =
       List.init
         n

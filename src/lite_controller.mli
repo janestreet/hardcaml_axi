@@ -9,13 +9,26 @@
 
 open Hardcaml
 
-module Make (X : Master_slave_bus_config.S) : sig
-  module Lite : module type of Lite.Make (X)
-  module Ibus : Internal_bus.S
+module Make (X : sig
+    include Master_slave_bus_config.S
+
+    (** If set, enables an additional [ADDRESS_HI] register to specify the address' most
+        significant bits. This doubles the address width of the downstream AXI-Lite bus. *)
+    val enable_address_hi : bool
+  end) : sig
+  module Ibus : module type of Internal_bus.Make (X)
+
+  module Lite : module type of Lite.Make (struct
+      include X
+
+      let addr_bits = if enable_address_hi then addr_bits * 2 else addr_bits
+    end)
 
   module Registers : sig
     type t =
-      | ADDRESS (** Address to read/write from *)
+      | ADDRESS_LO
+      (** Specifies the address's least significant bits. If [enable_address_hi] isn't
+          set, then this constitutes the full address and [ADDRESS_HI] is ignored. *)
       | DATA
       (** Reading triggers an AXI read from the specified ADDRESS and returns the data,
           writing triggers an AXI write of the data to the specified ADDRESS. *)
@@ -27,6 +40,9 @@ module Make (X : Master_slave_bus_config.S) : sig
           means the lock was acquired, 1 means the lock was not acquired. Write a 0 to the
           lsb of this register to clear the lock. Using this lock is entirely optional,
           and it is up to all the users to be well behaved. *)
+      | ADDRESS_HI
+      (** Specifies the address's most significant bits. Only used if [enable_address_hi]
+          is set. *)
     [@@deriving enumerate, sexp_of, variants]
 
     val offset : t -> int
