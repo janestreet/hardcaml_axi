@@ -49,7 +49,7 @@ struct
     [@@deriving hardcaml ~rtlmangle:false]
   end
 
-  let create _scope (i : _ I.t) =
+  let create scope (i : _ I.t) =
     (* AXI-channels
        {v
          ==========================
@@ -80,7 +80,8 @@ struct
     *)
     let reg_spec = Reg_spec.create ~clock:i.clock ~clear:i.clear () in
     let state = Always.State_machine.create (module State) reg_spec ~enable:vdd in
-    ignore @@ (state.current -- "STATE");
+    let ( -- ) = Scope.naming scope in
+    ignore (state.current -- "STATE" : Signal.t);
     let int_master =
       Internal_bus.Master_to_slave.(map port_widths) ~f:(fun width ->
         Always.Variable.reg reg_spec ~enable:vdd ~width)
